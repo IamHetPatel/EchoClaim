@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "731f7c5c94e5",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".gitignore",
+    "data/policies/kk-300_kfz-kasko.md",
+    "data/policies/vvg-auszug.md",
+    "retrieval/__init__.py",
+    "retrieval/chunker.py",
+    "retrieval/config.py",
+    "retrieval/corpus.py",
+    "retrieval/embedder.py",
+    "retrieval/index.py",
+    "retrieval/ingest.py",
+    "tests/test_retrieval.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/73/1f7c5c94e5/0/metadata.json",
+      "transcript": "/73/1f7c5c94e5/0/full.jsonl",
+      "content_hash": "/73/1f7c5c94e5/0/content_hash.txt",
+      "prompt": "/73/1f7c5c94e5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4122,
+    "cache_creation_tokens": 82281,
+    "cache_read_tokens": 1892634,
+    "output_tokens": 42808,
+    "api_call_count": 30
+  }
+}
