@@ -42,6 +42,10 @@ from extraction.gliner2_service import ExtractionService
 from extraction.gemini_extractor import GeminiExtractor
 from bridge.client import publish as bridge_publish
 from tools.tavily_lookup import DISPATCH as TAVILY_DISPATCH
+from tools.coverage_lookup import DISPATCH as COVERAGE_DISPATCH
+
+# All callable tools Jamie can invoke in the text demo.
+TOOL_DISPATCH = {**TAVILY_DISPATCH, **COVERAGE_DISPATCH}
 
 
 def load_crm(name: str) -> dict:
@@ -61,6 +65,14 @@ def _maybe_tool_calls(user_text: str) -> list[tuple[str, dict]]:
             break
     if "drivable" in lower or "kann nicht fahren" in lower or "totaled" in lower:
         out.append(("tavily_lookup_towing", {"location": user_text[:80]}))
+    # Coverage questions -> ground the answer in cited policy clauses.
+    coverage_kw = (
+        "covered", "cover", "deckt", "gedeckt", "versichert", "zahlt", "übernimmt",
+        "übernommen", "selbstbeteiligung", "vollkasko", "teilkasko", "kasko",
+        "parkschaden", "parkschäden", "diebstahl", "entwendung", "vandalismus",
+    )
+    if any(kw in lower for kw in coverage_kw):
+        out.append(("coverage_lookup", {"query": user_text[:200]}))
     return out
 
 
@@ -131,7 +143,7 @@ async def run() -> None:
 
         for name, args_ in _maybe_tool_calls(user):
             await emit({"type": "tool_call", "name": name, "args": args_})
-            fn = TAVILY_DISPATCH[name]
+            fn = TOOL_DISPATCH[name]
             result = await asyncio.to_thread(fn, **args_)
             await emit({"type": "tool_result", "name": name, "result": result})
             tool_results.append({"name": name, "result": result})

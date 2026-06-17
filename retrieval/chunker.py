@@ -89,6 +89,15 @@ def _window(text: str, max_tokens: int, overlap: int) -> list[str]:
     return out
 
 
+def _is_container_heading(marker: str, body: str) -> bool:
+    """A 'Teil X — ...' line with no clause text of its own is a structural container,
+    not a citable clause. Its child paragraphs carry the content, so we don't index the
+    bare heading (it otherwise wins short-document matches and pollutes citations)."""
+    if not marker.startswith("Teil"):
+        return False
+    return not any(p in body for p in ".!?") and len(body) < 80
+
+
 def chunk_document(
     raw: str,
     *,
@@ -102,7 +111,7 @@ def chunk_document(
     """Structure-first, token-window-second chunking."""
     chunks: list[Chunk] = []
     for marker, body in split_on_structure(raw):
-        if not body:
+        if not body or _is_container_heading(marker, body):
             continue
         section_path = marker or "root"
         for j, piece in enumerate(_window(body, max_tokens, overlap)):
