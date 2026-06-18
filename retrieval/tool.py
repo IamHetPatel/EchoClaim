@@ -1,11 +1,11 @@
-"""``coverage_lookup`` — retrieval exposed as a Gemini function-call tool.
+"""``coverage_lookup``: retrieval exposed as a Gemini function-call tool.
 
 The agent calls this to ground coverage answers in cited policy clauses; on low
 confidence it returns a signal so the agent uses the fallback ladder instead of
 inventing coverage. The returned dict carries a ``summary`` field (the top cited
 clause) so it renders straight into the agent's existing tool-results prompt block,
 and ``stub=True`` whenever the agent must NOT assert coverage (no confident match, or
-retrieval unavailable) — matching how the prompt treats stubbed tool output.
+retrieval unavailable), matching how the prompt treats stubbed tool output.
 
 See echoclaim-spine/BUILD_PLAN.md sections 3.5 and 3.9.
 """
@@ -58,7 +58,7 @@ def coverage_lookup(query: str, product_code: str | None = None, lang: str = "de
     except Exception as exc:  # retrieval down -> never assert coverage
         return {
             "stub": True,
-            "summary": "Deckungsdatenbank momentan nicht erreichbar — keine Deckungszusage "
+            "summary": "Deckungsdatenbank momentan nicht erreichbar. Keine Deckungszusage "
                        "geben; den Fall notieren und einem Spezialisten zur Prüfung übergeben.",
             "low_confidence": True,
             "citations": [],
@@ -73,7 +73,7 @@ def coverage_lookup(query: str, product_code: str | None = None, lang: str = "de
     if res.low_confidence:
         return {
             "stub": True,  # prompt: "say something general, don't quote"
-            "summary": "Kein eindeutiger Treffer in den Versicherungsbedingungen — keine "
+            "summary": "Kein eindeutiger Treffer in den Versicherungsbedingungen. Keine "
                        "Deckungszusage geben; einem Spezialisten zur Bestätigung übergeben.",
             "low_confidence": True,
             "embedding_version": res.version,

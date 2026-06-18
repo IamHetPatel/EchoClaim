@@ -1,4 +1,4 @@
-"""Retrieval PR3 tests — metric correctness + end-to-end eval over the golden set.
+"""Retrieval PR3 tests: metric correctness + end-to-end eval over the golden set.
 
 The metric functions are checked against hand-computed values; the end-to-end run uses
 the deterministic lexical backend so the numbers are reproducible (the property the PR5

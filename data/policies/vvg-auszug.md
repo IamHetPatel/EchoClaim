@@ -3,7 +3,7 @@ doc_id: vvg-auszug
 doc_type: regulation
 product_code: null
 lang: de
-title: VVG — Auszug Obliegenheiten (paraphrasiert, illustrativ)
+title: "VVG Auszug Obliegenheiten (paraphrasiert, illustrativ)"
 ---
 § 28 Verletzung einer vertraglichen Obliegenheit
 Bei Verletzung einer vor Eintritt des Versicherungsfalls zu erfüllenden Obliegenheit kann

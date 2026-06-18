@@ -1,18 +1,18 @@
 # Retrieval
 
 Grounds the assistant's coverage answers in the policy corpus instead of generating them.
-A coverage question is answered with a retrieved, cited clause; if nothing matches
-confidently, the tool reports low confidence so the agent declines to assert coverage.
+A coverage question is answered with a retrieved, cited clause. If nothing matches with
+confidence, the tool reports low confidence so the agent declines to assert coverage.
 
 ## Pipeline
 
 ```
 corpus (data/policies/*.md)
-  └─ chunker      structure-first split on German § / Teil markers, token-window fallback
-       └─ embedder    versioned (model id + dim travel with the vector); content-hash cache
-            └─ index       Qdrant collection with named vectors (one per embedding version)
-                 └─ retriever   recall → rerank → cited chunks (+ low-confidence signal)
-                      └─ tool        coverage_lookup(query, product_code) → cited clauses
+  -> chunker      structure-first split on German § / Teil markers, token-window fallback
+  -> embedder     versioned (model id + dim travel with the vector); content-hash cache
+  -> index        Qdrant collection with named vectors (one per embedding version)
+  -> retriever    recall, rerank, cited chunks, plus a low-confidence signal
+  -> tool         coverage_lookup(query, product_code) returns cited clauses
 ```
 
 Each chunk keeps the metadata that doubles as its citation and its filter keys:
@@ -28,9 +28,9 @@ Recall runs over one of three interchangeable backends (`RETRIEVAL_BACKEND`):
 | `memory-dense` | dense cosine in numpy | sentence-transformers (no server) |
 | `lexical` | BM25 over clause text | nothing (stdlib + numpy) |
 
-`auto` (the default) uses Qdrant when it is reachable and falls back to the lexical
+`auto`, the default, uses Qdrant when it is reachable and falls back to the lexical
 backend otherwise. The lexical path tokenizes with stopword filtering and light German
-stemming so singular/plural and case variants match; it is deterministic, which is what
+stemming so singular/plural and case variants match. It is deterministic, which is what
 makes the evaluation reproducible. The dense path is the real semantic matcher.
 
 Embeddings have two backends (`EMBED_BACKEND`): `sentence-transformers` (BGE-M3) and
@@ -39,8 +39,8 @@ Embeddings have two backends (`EMBED_BACKEND`): `sentence-transformers` (BGE-M3)
 ## Usage
 
 ```bash
-# Ingest the corpus (writes vectors to Qdrant; --dry-run stops before Qdrant and
-# just writes a manifest recording the embedding version)
+# Ingest the corpus. --dry-run stops before Qdrant and writes a manifest that records
+# the embedding version.
 python -m retrieval.ingest --dry-run
 EMBED_BACKEND=hash python -m retrieval.ingest --dry-run     # fully offline
 
@@ -60,14 +60,15 @@ result = coverage_lookup("Ist ein Parkschaden in der Vollkasko gedeckt?", produc
 
 ## Versioning and migration
 
-Vectors are written under a Qdrant *named vector* keyed by embedding version (`emb_v1`),
-and the embedding model id and dimension are recorded with the index. Because two named
+Vectors are written under a Qdrant named vector keyed by embedding version (`emb_v1`), and
+the embedding model id and dimension are recorded with the index. Because two named
 vectors can coexist in one collection, a new embedding model can be introduced with
-dual-write + backfill and an atomic read cutover — the basis for zero-downtime migration.
+dual-write plus backfill and an atomic read cutover. That is the basis for zero-downtime
+migration.
 
 ## Configuration
 
-All settings are environment-overridable; see [config.py](config.py). Common ones:
+All settings are environment-overridable. See [config.py](config.py). Common ones:
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -83,6 +84,6 @@ All settings are environment-overridable; see [config.py](config.py). Common one
 pytest tests/test_retrieval.py tests/test_retrieval_query.py tests/test_retrieval_eval.py
 ```
 
-Cover chunking, the corpus loader, both embedder backends, lexical recall + rerank, the
-`coverage_lookup` tool (including the refusal path), the ranking metrics, and an
-end-to-end quality bar — all offline, no model download or Qdrant server required.
+These cover chunking, the corpus loader, both embedder backends, lexical recall and
+rerank, the `coverage_lookup` tool (including the refusal path), the ranking metrics, and
+an end-to-end quality bar. They run offline, with no model download or Qdrant server.

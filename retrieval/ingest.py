@@ -11,7 +11,7 @@ Run it::
     EMBED_BACKEND=hash python -m retrieval.ingest --dry-run   # offline, no model download
 
 If Qdrant is unreachable, ingest degrades to a dry run with a warning rather than
-failing — matching the repo's "the demo never breaks" tool convention.
+failing, matching the repo's "the demo never breaks" tool convention.
 """
 from __future__ import annotations
 

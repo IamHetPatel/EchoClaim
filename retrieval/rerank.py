@@ -3,8 +3,8 @@
 Bi-encoder / BM25 recall is cheap but blurry; a reranker reorders the top candidates.
 Two backends share one interface (``rerank``):
 
-* ``CrossEncoderReranker`` — bge-reranker-v2-m3, the real model (lazy-loaded).
-* ``LexicalReranker``      — dependency-free query/passage term-overlap scorer for
+* ``CrossEncoderReranker``: bge-reranker-v2-m3, the real model (lazy-loaded).
+* ``LexicalReranker``: dependency-free query/passage term-overlap scorer for
   offline use and CI. Its score is a bounded [0, 1] coverage fraction, which doubles
   as the low-confidence signal the retriever thresholds on.
 

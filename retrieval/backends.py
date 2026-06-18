@@ -3,10 +3,10 @@
 The retriever asks a backend for top-N candidates by ``query(text, ...)``; the backend
 owns *how* it recalls them. Three implementations share the interface:
 
-* ``QdrantBackend``        — dense ANN over BGE-M3 vectors in Qdrant (production path).
-* ``InMemoryDenseBackend`` — dense cosine in numpy, real embeddings but no Qdrant server
+* ``QdrantBackend``: dense ANN over BGE-M3 vectors in Qdrant (production path).
+* ``InMemoryDenseBackend``: dense cosine in numpy, real embeddings but no Qdrant server
   (handy for small corpora, the PR3 eval, and CI when the model *is* installed).
-* ``LexicalBackend``       — BM25 over the corpus text, zero heavy deps. The offline /
+* ``LexicalBackend``: BM25 over the corpus text, zero heavy deps. The offline /
   CI / "the demo never breaks" path: genuinely relevant for keyworded German policy
   queries without a model download.
 
@@ -54,7 +54,7 @@ class QdrantBackend:
 
 
 class InMemoryDenseBackend:
-    """Dense cosine recall held in numpy — real embeddings, no Qdrant server."""
+    """Dense cosine recall held in numpy. Real embeddings, no Qdrant server."""
 
     def __init__(self, chunks: list[Chunk], matrix: np.ndarray, version: str):
         self._chunks = chunks

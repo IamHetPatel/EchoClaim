@@ -1,4 +1,4 @@
-"""Coverage lookups, exposed as a Gemini function-call — same shape as tavily_lookup.
+"""Coverage lookups, exposed as a Gemini function-call, same shape as tavily_lookup.
 
 Thin demo/agent-facing wrapper over ``retrieval.tool.coverage_lookup`` so it slots into
 the demo's DISPATCH and GeminiBrain's tool list exactly like the Tavily tools. Falls back
@@ -31,7 +31,7 @@ def lookup_coverage(query: str, product_code: str | None = None, lang: str = "de
     if not _HAVE_RETRIEVAL:
         return {
             "stub": True,
-            "summary": "Coverage lookup unavailable — do not assert coverage; note it for a "
+            "summary": "Coverage lookup unavailable. Do not assert coverage; note it for a "
                        "specialist to confirm.",
             "low_confidence": True,
             "citations": [],
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
 
-    # Running this file directly puts tools/ on sys.path, not the repo root —
+    # Running this file directly puts tools/ on sys.path, not the repo root,
     # add the root so `import retrieval` resolves (the demo already does this).
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from tools.coverage_lookup import lookup_coverage  # re-import with repo root on path

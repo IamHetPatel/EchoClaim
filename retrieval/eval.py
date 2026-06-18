@@ -5,7 +5,7 @@ Runs the retriever over a golden set (JSONL of
 metrics. The golden set is bootstrapped from the corpus clauses, then spot-checked.
 
 Deterministic by construction: the lexical backend and the hash embedder are both
-reproducible, so the numbers don't move between runs — which is what lets the PR5 CI
+reproducible, so the numbers don't move between runs, which is what lets the PR5 CI
 eval gate compare against a baseline. Run::
 
     python -m retrieval.eval                 # table over the default golden set
@@ -66,7 +66,7 @@ class EvalReport:
     per_query: list[dict]
 
     def pretty(self) -> str:
-        lines = [f"Retrieval eval — {self.n} queries @ k={self.k}", "-" * 44]
+        lines = [f"Retrieval eval: {self.n} queries @ k={self.k}", "-" * 44]
         for name, val in self.metrics.items():
             lines.append(f"  {name:14} {val:.4f}")
         lines.append("-" * 44)

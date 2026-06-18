@@ -1,28 +1,28 @@
 # EchoClaim
 
 A phone-based first-notice-of-loss (FNOL) claims-intake assistant for a German motor
-insurer. The assistant — *Jamie* — answers an inbound call, works from what the insurer
-already knows about the caller, gathers the remaining claim details conversationally, and
-documents everything as structured data in real time. Coverage answers are grounded in the
-policy wording and cited, and the conversation and the structured extraction run in
-parallel so the dialogue stays natural.
+insurer. The assistant, Jamie, answers an inbound call, works from what the insurer
+already knows about the caller, gathers the remaining claim details in conversation, and
+writes everything down as structured data while the call is still going. Coverage answers
+are grounded in the policy wording and cited. The conversation and the structured
+extraction run in parallel so the dialogue stays natural.
 
 ## Architecture
 
 ```
-Inbound call ─▶ Gradium STT ─▶ GeminiBrain ─▶ Gradium TTS ─▶ Caller
-                                  │  (Gemini 2.5 Flash, known-context injection,
-                                  │   function-calling tools, model fallback chain)
-                                  ▼
+Inbound call -> Gradium STT -> GeminiBrain -> Gradium TTS -> Caller
+                                  |  (Gemini 2.5 Flash, known-context injection,
+                                  |   function-calling tools, model fallback chain)
+                                  v
                        transcript fans out in parallel
-                                  ▼
-        GLiNER2 extractor ─▶ 15 claim pillars + 5 fraud signals ─▶ WS bridge ─▶ dashboard
+                                  v
+        GLiNER2 extractor -> 15 claim pillars + 5 fraud signals -> WS bridge -> dashboard
 ```
 
-The live conversational loop is supported by a **retrieval** subsystem: policy and
-regulation documents are chunked structure-first (on German `§`/`Teil` markers), embedded,
-and indexed; a `coverage_lookup` tool retrieves and cites the exact clause before Jamie
-states any coverage fact, and refuses to assert coverage when there is no confident match.
+A retrieval subsystem backs the conversation. Policy and regulation documents are chunked
+on German `§`/`Teil` markers, embedded, and indexed. A `coverage_lookup` tool fetches and
+cites the exact clause before Jamie states any coverage fact, and reports low confidence
+(so Jamie declines to answer) when nothing matches well.
 
 ## Stack
 
@@ -32,7 +32,7 @@ states any coverage fact, and refuses to assert coverage when there is no confid
 | Conversation | Gemini 2.5 Flash, with automatic fallback to 2.0 / 1.5 Flash |
 | Context & tools | Known-context CRM injection; Tavily real-time lookup; `coverage_lookup` retrieval |
 | Extraction | `fastino/gliner2-base-v1` (fine-tuned), benchmarked against LLM structured output |
-| Retrieval | BGE-M3 embeddings + `bge-reranker-v2-m3` + Qdrant, with a dependency-free BM25 fallback for offline use |
+| Retrieval | BGE-M3 embeddings, `bge-reranker-v2-m3`, Qdrant, plus a dependency-free BM25 fallback for offline use |
 | Telephony | LiveKit rooms, Twilio SIP |
 | Services | FastAPI WebSocket bridge, React dashboard |
 | Privacy | PII redaction on transcripts and logs |
@@ -53,7 +53,7 @@ tests/         Unit + adversarial conversation tests
 scripts/       run_demo_text.py and other operator commands
 ```
 
-## Quick start (text mode — no telephony, no API keys)
+## Quick start (text mode, no telephony, no API keys)
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -62,15 +62,15 @@ cp .env.example .env
 python scripts/run_demo_text.py --crm max_mueller
 ```
 
-Runs Jamie against typed input with the GLiNER2 extractor live and the dashboard updating
-over WebSocket. Coverage questions trigger `coverage_lookup`, which cites the matching
-policy clause. No paid infrastructure required.
+This runs Jamie against typed input with the GLiNER2 extractor live and the dashboard
+updating over WebSocket. Coverage questions trigger `coverage_lookup`, which cites the
+matching policy clause. No paid infrastructure is needed.
 
 For the voice loop and Twilio SIP setup, see [telephony/README.md](telephony/README.md).
 
 ## Retrieval
 
-The retrieval subsystem (`retrieval/`) runs locally with no paid services — see
+The retrieval subsystem (`retrieval/`) runs locally with no paid services. See
 [retrieval/README.md](retrieval/README.md). Quick checks:
 
 ```bash
@@ -78,19 +78,19 @@ python -m retrieval.ingest --dry-run     # chunk + embed the corpus, write a man
 python -m retrieval.eval                 # precision@k / recall@k / MRR / nDCG
 ```
 
-Retrieval quality is measured against a golden set of coverage questions mapped to the
-clause each should return (`data/eval/golden_set.jsonl`). The lexical backend and the
+Retrieval quality is measured against a golden set of coverage questions, each mapped to
+the clause it should return (`data/eval/golden_set.jsonl`). The lexical backend and the
 hash embedder are deterministic, so the metrics are reproducible.
 
 ## Status
 
-Built: the voice loop, known-context injection, GLiNER2 extraction with a benchmark, the
-tool layer, the dashboard, and the retrieval subsystem (structure-aware ingest, a
-Qdrant named-vector index, query + rerank, the cited `coverage_lookup` tool, and the
-ranking-metric evaluation).
+Built so far: the voice loop, known-context injection, GLiNER2 extraction with a
+benchmark, the tool layer, the dashboard, and the retrieval subsystem (structure-aware
+ingest, a Qdrant named-vector index, query plus rerank, the cited `coverage_lookup` tool,
+and the ranking-metric evaluation).
 
 Next: an LLMOps layer (versioned prompt registry, LLM-judge groundedness scoring,
-PII-redacted trace logging, a CI eval gate, and drift monitoring) and zero-downtime
+PII-redacted trace logging, a CI eval gate, drift monitoring) and zero-downtime
 embedding-model migration. The retrieval index already stores vectors under named
 versions so two embedding models can coexist, which is what the migration builds on.
 

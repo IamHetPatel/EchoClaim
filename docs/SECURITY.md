@@ -9,16 +9,16 @@ This document describes the repository's security surface and the controls in pl
 | Surface | Contents | Redaction |
 |---|---|---|
 | Live transcript on the bridge | Caller utterances, agent replies | `agent/pii_redact.py` strips policy #, plate, VIN, IBAN, phone, email, DOB before `bridge.publish` |
-| Persisted conversation-test transcripts | Synthetic only — no real PII, but redaction is still applied | yes |
+| Persisted conversation-test transcripts | Synthetic only (no real PII), redaction still applied | yes |
 | GLiNER2 extractor inputs | Caller utterances | local only (no external call); model runs on-device |
-| Tavily lookups | Free-form location strings only — no PII sent | n/a |
+| Tavily lookups | Free-form location strings only (no PII sent) | n/a |
 | Gemini Flash | Full conversation | governed by the provider's API data-use terms (no training on API data) |
 
 ## PII redactor
 
 `agent.pii_redact.redact(text)` runs on every path that writes to a log handler, the
-bridge, or disk. Twelve patterns, unit-tested in `tests/test_smoke.py::test_pii_redact`
-and `test_pii_redact_extended`:
+bridge, or disk. It covers twelve patterns, unit-tested in
+`tests/test_smoke.py::test_pii_redact` and `test_pii_redact_extended`:
 
 | Category | Pattern | Token |
 |---|---|---|
@@ -35,7 +35,7 @@ and `test_pii_redact_extended`:
 | Email | `EMAIL` | `[EMAIL]` |
 | ISO date of birth | `DOB` | `[DOB]` |
 
-Pattern order matters: DOB runs before PHONE so an ISO date like `1984-03-15` is not
+Pattern order matters. DOB runs before PHONE so an ISO date like `1984-03-15` is not
 consumed by the looser phone-number pattern.
 
 ## Dependency and code scanning
@@ -46,13 +46,13 @@ data-handling path. Scan output lives under [`docs/aikido-screenshots/`](aikido-
 
 ## Threat model
 
-- **Caller-side prompt injection** — the system prompt forbids disclosing that the agent
-  is automated; exercised by the adversarial conversation tests (`tests/juror_bot.py`).
-- **Telephony abuse** — rate-limit inbound calls at the LiveKit / Twilio edge before they
+- Caller-side prompt injection. The system prompt forbids disclosing that the agent is
+  automated. Covered by the adversarial conversation tests (`tests/juror_bot.py`).
+- Telephony abuse. Rate-limit inbound calls at the LiveKit or Twilio edge before they
   reach the agent.
-- **Tavily quota exhaustion** — every call is wrapped in try/except and degrades to a
-  generic acknowledgement rather than failing the turn.
-- **Coverage / policy hallucination** — the system prompt is regenerated every turn from
-  the live CRM JSON, and coverage answers are grounded in retrieved, cited clauses
-  (`retrieval/`); the agent declines to assert coverage without a confident match.
-- **Logging leakage** — `pii_redact.redact` is the single choke-point.
+- Tavily quota exhaustion. Every call is wrapped in try/except and degrades to a generic
+  acknowledgement rather than failing the turn.
+- Coverage or policy hallucination. The system prompt is regenerated every turn from the
+  live CRM JSON, and coverage answers are grounded in retrieved, cited clauses
+  (`retrieval/`). The agent declines to assert coverage without a confident match.
+- Logging leakage. `pii_redact.redact` is the single choke-point.

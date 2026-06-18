@@ -1,4 +1,4 @@
-"""Retrieval PR2 tests — query path, offline (BM25 lexical backend, no Qdrant/model).
+"""Retrieval PR2 tests: query path, offline (BM25 lexical backend, no Qdrant/model).
 
 Proves: the lexical backend recalls the right clause, the retriever returns a citation
 with a sane confidence flag, and the coverage_lookup tool returns the agent-facing shape

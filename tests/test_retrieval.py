@@ -1,4 +1,4 @@
-"""Retrieval PR1 tests — fast, offline, no Qdrant, no model download.
+"""Retrieval PR1 tests: fast, offline, no Qdrant, no model download.
 
 Proves the ingest data path: structure-aware chunking, corpus loading, the deterministic
 hash embedder, and a dry-run ingest that records the embedding version. Run with:

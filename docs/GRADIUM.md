@@ -66,7 +66,7 @@ tts_kwargs["json_config"] = {
 All four are env-overridable (`GRADIUM_TEMP`, `GRADIUM_PADDING`, `GRADIUM_CFG`,
 `GRADIUM_LANGUAGE`), so they can be tuned without a redeploy.
 
-## STT noise robustness
+## Reducing STT noise errors
 
 Default STT speculatively produces words from ambient noise (phantom transcripts such as
 "Marama", "Englishman"). Setting `gradium.STT(temperature=0.0)` forces conservative

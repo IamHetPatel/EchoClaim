@@ -7,8 +7,8 @@ never re-embed unchanged text.
 
 Two backends share one interface (``encode`` / ``encode_one``):
 
-* ``Embedder``     — the real BGE-M3 via sentence-transformers (multilingual, German).
-* ``HashEmbedder`` — deterministic, dependency-free vectors from a content hash. Used by
+* ``Embedder``: the real BGE-M3 via sentence-transformers (multilingual, German).
+* ``HashEmbedder``: deterministic, dependency-free vectors from a content hash. Used by
   tests, CI, and reproducible migration shadow-evals where downloading a multi-GB model
   is neither available nor wanted. Same dimension as the version it's bound to.
 
@@ -120,7 +120,7 @@ class HashEmbedder(_BaseEmbedder):
     Hashes each text into a fixed seed, draws a vector from that seed, and L2-normalizes.
     Identical text -> identical vector, so it is reproducible across machines and runs,
     which is exactly what an offline eval / migration shadow-comparison needs. It carries
-    no semantics — it is for plumbing, determinism, and CI, not retrieval quality.
+    no semantics. It is for plumbing, determinism, and CI, not retrieval quality.
     """
 
     def _encode_uncached(self, texts: list[str]) -> np.ndarray:
@@ -142,7 +142,7 @@ def get_embedder(version: EmbeddingVersion, *, backend: str | None = None, use_c
     backend = backend or settings.embed_backend
     if backend == "hash":
         # The hash backend is deterministic and cheap, and it shares the cache key space
-        # (version.model_id) with the real model — caching it would let a hash vector
+        # (version.model_id) with the real model, so caching it would let a hash vector
         # leak into a later real-model run, so never cache it.
         return HashEmbedder(version, use_cache=False)
     if backend in ("sentence-transformers", "st", "bge"):

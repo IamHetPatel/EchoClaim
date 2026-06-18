@@ -16,7 +16,7 @@ class EmbeddingVersion:
     """A named, versioned embedding configuration.
 
     ``name`` is the Qdrant *named vector* key, so two versions can coexist in one
-    collection — this is what makes the zero-downtime migration (PR4) clean.
+    collection. This is what makes the zero-downtime migration (PR4) clean.
     """
     name: str          # qdrant named-vector key, e.g. "emb_v1"
     model_id: str      # huggingface id, e.g. "BAAI/bge-m3"
@@ -24,7 +24,7 @@ class EmbeddingVersion:
 
 
 # Registered embedding versions. Add a new entry to introduce a model; never edit an
-# existing one in place — that would invalidate vectors already written under it.
+# existing one in place, since that would invalidate vectors already written under it.
 EMBEDDING_VERSIONS: dict[str, EmbeddingVersion] = {
     "emb_v1": EmbeddingVersion("emb_v1", "BAAI/bge-m3", 1024),
     # "emb_v2": EmbeddingVersion("emb_v2", "<next-model>", <dim>),  # added in PR4

@@ -47,4 +47,4 @@ in CI.
 `agent/pii_redact.py` exposes `redact(text)` and `redacted_dict(d)`, replacing German
 policy numbers, VINs, plates, phones, IBANs, dates of birth, emails, and related
 identifiers with bracketed tokens. It includes a `__main__` self-test. It is the
-single boundary every persistence path passes through — see [SECURITY.md](SECURITY.md).
+single boundary every persistence path passes through. See [SECURITY.md](SECURITY.md).

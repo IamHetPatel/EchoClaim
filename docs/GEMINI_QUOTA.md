@@ -1,7 +1,7 @@
 # Handling Gemini rate limits
 
 The Gemini Developer free tier has per-model and per-day quota buckets. When the
-configured model returns 429 / `RESOURCE_EXHAUSTED`, work through the following.
+configured model returns 429 or `RESOURCE_EXHAUSTED`, work through the following.
 
 ## 1. Check what's reachable
 
@@ -26,7 +26,7 @@ Both the chat brain (`agent/gemini_client.py`) and the eval judge (`scripts/eval
 auto-rotate to fallback models when the configured one 429s mid-call, so pinning is an
 optimisation that avoids wasted retries rather than a requirement.
 
-## 3. If all Gemini models are rate-limited — use Ollama (local, no quota)
+## 3. If all Gemini models are rate-limited, use Ollama (local, no quota)
 
 ```bash
 brew install ollama
@@ -41,10 +41,10 @@ echo "OLLAMA_MODEL=llama3.2" >> .env
 python scripts/run_demo_auto.py --scenario max_rear_end_a4 --pace normal
 ```
 
-Trade-offs vs. Gemini Flash: higher latency (~1–3s/turn on an M-series laptop vs <500ms);
-lower conversational quality on the 3B model (7B is closer); no quota, rate limits, or API
-key. Use it for prompt iteration and offline runs; Gemini Flash still sounds more natural
-for a final recording.
+Trade-offs against Gemini Flash: higher latency (roughly 1 to 3 seconds per turn on an
+M-series laptop, versus under 500ms), and lower conversational quality on the 3B model
+(the 7B model is closer). No quota, rate limits, or API key. Use it for prompt iteration
+and offline runs. Gemini Flash still sounds more natural for a final recording.
 
 ## 4. Other providers
 
@@ -56,14 +56,14 @@ OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4.1-mini
 ```
 
-(`pip install openai`.) The `stream_reply` interface is identical; the runner is
+(`pip install openai`.) The `stream_reply` interface is identical, and the runner is
 provider-agnostic.
 
 ## 5. Notes
 
-- Each `eval_jamie.py --all` is `N transcripts × 1 judge call` — check quota before
+- Each `eval_jamie.py --all` is N transcripts times one judge call. Check quota before
   running it in a loop.
 - The free tier resets at midnight Pacific.
-- The eval judge tries models in order
-  `gemini-2.5-flash-lite → gemini-flash-latest → gemini-2.5-flash → gemini-2.5-pro`;
-  the first that answers wins, and it reports the last exception clearly if all fail.
+- The eval judge tries models in order: `gemini-2.5-flash-lite`, `gemini-flash-latest`,
+  `gemini-2.5-flash`, `gemini-2.5-pro`. The first that answers wins, and it reports the
+  last exception clearly if all fail.

@@ -3,9 +3,9 @@ doc_id: kk-300
 doc_type: policy
 product_code: KK-300
 lang: de
-title: KK-300 — Bedingungen Kfz-Kaskoversicherung (illustrativ)
+title: "KK-300 Bedingungen Kfz-Kaskoversicherung (illustrativ)"
 ---
-Teil A — Geltungsbereich und Versicherungsumfang
+Teil A: Geltungsbereich und Versicherungsumfang
 
 § 1 Gegenstand der Versicherung
 Versichert sind das im Versicherungsschein bezeichnete Fahrzeug sowie dessen unter
@@ -17,7 +17,7 @@ Der Versicherungsschutz besteht in den Mitgliedstaaten der Europäischen Union s
 den im Versicherungsschein genannten weiteren Staaten. Außerhalb dieses Bereichs besteht
 kein Versicherungsschutz, es sei denn, eine besondere Vereinbarung wurde getroffen.
 
-Teil B — Teilkasko
+Teil B: Teilkasko
 
 § 3 Umfang der Teilkasko
 Die Teilkasko ersetzt Schäden durch Brand, Explosion, Entwendung (insbesondere Diebstahl
@@ -31,7 +31,7 @@ Zeitpunkt des Schadens abzüglich der vereinbarten Selbstbeteiligung.
 Versicherungsschein nichts anderes vereinbart ist.
 (3) Der Versicherungsnehmer hat die Entwendung unverzüglich der Polizei anzuzeigen.
 
-Teil C — Vollkasko
+Teil C: Vollkasko
 
 § 5 Umfang der Vollkasko
 Die Vollkasko umfasst zusätzlich zu den Leistungen der Teilkasko Schäden durch Unfall,

@@ -3,7 +3,7 @@
 One collection holds multiple embedding versions as *named vectors* (emb_v1, emb_v2).
 Reads target the active version; the migration (PR4) writes a second version alongside
 the first and flips the active pointer atomically. ``qdrant_client`` is imported lazily
-so this module — and everything that only needs the chunker/embedder — imports without
+so this module, and everything that only needs the chunker/embedder, imports without
 the dependency installed.
 
 See echoclaim-spine/BUILD_PLAN.md sections 3.2 and 3.4.

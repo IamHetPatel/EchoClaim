@@ -28,7 +28,7 @@ class Chunk:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def payload(self) -> dict:
-        """Qdrant payload — also the citation source and the filter keys."""
+        """Qdrant payload. Also the citation source and the filter keys."""
         return {
             "doc_id": self.doc_id,
             "section_path": self.section_path,
@@ -90,7 +90,7 @@ def _window(text: str, max_tokens: int, overlap: int) -> list[str]:
 
 
 def _is_container_heading(marker: str, body: str) -> bool:
-    """A 'Teil X — ...' line with no clause text of its own is a structural container,
+    """A 'Teil X ...' line with no clause text of its own is a structural container,
     not a citable clause. Its child paragraphs carry the content, so we don't index the
     bare heading (it otherwise wins short-document matches and pollutes citations)."""
     if not marker.startswith("Teil"):
