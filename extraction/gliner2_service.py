@@ -73,6 +73,13 @@ FRAUD_HUMAN_TO_ID: dict[str, str] = {
 
 FRAUD_IDS = set(FRAUD_HUMAN_TO_ID.values())
 
+# Canonical label-ID vocabularies, derived from the maps above so they can never
+# drift out of sync with them. `extraction.gemini_extractor` imports these as the
+# default (no-domain) target set; each ID matches a ClaimState.PILLARS key per the
+# invariant noted above.
+CLAIM_LABELS: list[str] = sorted(set(HUMAN_TO_ID.values()))
+FRAUD_LABELS: list[str] = sorted(FRAUD_IDS)
+
 _MODEL_CANDIDATES = [
     "fastino/gliner2-base-v1",
     "knowledgator/gliner-bi-large-v2.0",
