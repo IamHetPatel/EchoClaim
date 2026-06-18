@@ -1,112 +1,99 @@
-# Operation: Turing Adjuster — *Jamie*
+# EchoClaim
 
-Jamie is a phone-based first-notice-of-loss (FNOL) claims intake specialist for a German motor insurer. She is built to pass the Inca "Human Test" at Big Berlin Hack, sweeping the Aikido, Fastino/Pioneer, Gradium, and Entire side bounties as a side-effect of the architecture.
+A phone-based first-notice-of-loss (FNOL) claims-intake assistant for a German motor
+insurer. The assistant — *Jamie* — answers an inbound call, works from what the insurer
+already knows about the caller, gathers the remaining claim details conversationally, and
+documents everything as structured data in real time. Coverage answers are grounded in the
+policy wording and cited, and the conversation and the structured extraction run in
+parallel so the dialogue stays natural.
 
-> The single tightest summary: **Jamie speaks from knowledge, not from a questionnaire.** Everything the insurer already knows about the caller is loaded into the system prompt before the phone rings; everything Jamie still needs to learn is gathered conversationally; everything she hears is documented asynchronously by a fine-tuned GLiNER2 extractor so the chat LLM can stay focused on sounding human.
-
-## Architecture (one sentence)
-
-`Inbound call → Gradium STT → Gemini 2.5 Flash (with Known-Context CRM + Tavily tools) → Gradium TTS → Caller`, while in parallel `transcript → fastino/gliner2-base-v1 → 15 claim pillars + 5 fraud signals → WebSocket → Lovable dashboard`.
-
-## Stack — verified facts (April 2026)
-
-The original game plan and the first round of stack research both contained hopeful claims that turned out not to match the actual docs / API responses. Corrected here so nothing breaks at H22:
-
-| Claim | Reality | What we use |
-|---|---|---|
-| `gemini-3-flash` is the latency-optimized public model | A live 404 from `models/gemini-3-flash` proves it isn't on the public v1beta endpoint yet | `gemini-2.5-flash`, with auto-probe fallback to `2.0-flash` and `1.5-flash` |
-| `knowledgator/gliner-multitask-large-v0.5` is current | That exact ID isn't current on HF | `fastino/gliner2-base-v1` (Pioneer-aligned) with `knowledgator/gliner-bi-large-v2.0` fallback |
-| `gradium.AsyncClient` / `gradium.Client` exist | Neither — the `gradium` 0.5.11 package exports `GradiumClient` | `from gradium import GradiumClient` (sync ctor, async `tts_stream` / `tts_realtime`) |
-| `<flush>` / `<break time="…"/>` SSML tags | Not documented in gradium.ai | Stick to documented `speed` / `temperature`; treat tags as best-effort |
-| `entire dispatch` | Confirmed real (user has used it) on top of `entire enable` | `entire enable` then `entire dispatch` for reasoning capture |
-| `GradiumTTSService` class in livekit | Real class is `gradium.TTS()` | `from livekit.plugins import gradium; gradium.TTS()` |
-| `pip install gradium` (only) | Multiple paths exist | Prototype with `gradbot`, ship with `livekit-agents[gradium]` |
-
-## Repo layout
+## Architecture
 
 ```
-agent/         Jamie's brain — system prompt, claim-state tracker, Gemini client
-voice/         Gradbot quickstart + LiveKit + Gradium production voice loop
+Inbound call ─▶ Gradium STT ─▶ GeminiBrain ─▶ Gradium TTS ─▶ Caller
+                                  │  (Gemini 2.5 Flash, known-context injection,
+                                  │   function-calling tools, model fallback chain)
+                                  ▼
+                       transcript fans out in parallel
+                                  ▼
+        GLiNER2 extractor ─▶ 15 claim pillars + 5 fraud signals ─▶ WS bridge ─▶ dashboard
+```
+
+The live conversational loop is supported by a **retrieval** subsystem: policy and
+regulation documents are chunked structure-first (on German `§`/`Teil` markers), embedded,
+and indexed; a `coverage_lookup` tool retrieves and cites the exact clause before Jamie
+states any coverage fact, and refuses to assert coverage when there is no confident match.
+
+## Stack
+
+| Layer | Component |
+|---|---|
+| Speech | Gradium STT / TTS |
+| Conversation | Gemini 2.5 Flash, with automatic fallback to 2.0 / 1.5 Flash |
+| Context & tools | Known-context CRM injection; Tavily real-time lookup; `coverage_lookup` retrieval |
+| Extraction | `fastino/gliner2-base-v1` (fine-tuned), benchmarked against LLM structured output |
+| Retrieval | BGE-M3 embeddings + `bge-reranker-v2-m3` + Qdrant, with a dependency-free BM25 fallback for offline use |
+| Telephony | LiveKit rooms, Twilio SIP |
+| Services | FastAPI WebSocket bridge, React dashboard |
+| Privacy | PII redaction on transcripts and logs |
+
+## Repository layout
+
+```
+agent/         System prompt, claim-state tracker, Gemini client
+voice/         LiveKit + Gradium production voice loop (and a mic-only quickstart)
 telephony/     Twilio SIP / LiveKit room glue
-extraction/    GLiNER2 microservice + benchmark vs. Gemini structured output
-tools/         Tavily real-time lookups exposed as Gemini function-calls
+extraction/    GLiNER2 microservice + benchmark vs. LLM structured output
+tools/         Real-time lookups exposed as function calls (Tavily, coverage_lookup)
+retrieval/     RAG over the policy corpus: chunking, embedding, index, retriever, eval
 bridge/        FastAPI WebSocket bridge to the dashboard
-dashboard/     Single-file React dashboard + Lovable regeneration prompt
-data/          Mock CRM profiles (Known Context)
-tests/         Juror-bot adversarial Turing harness
-fillers/       Filler-audio manifest + generation script
-docs/          SECURITY.md (Aikido), ENTIRE.md, prompts cookbook
+dashboard/     React dashboard
+data/          Mock CRM profiles, the policy corpus, and the retrieval golden set
+tests/         Unit + adversarial conversation tests
 scripts/       run_demo_text.py and other operator commands
 ```
 
-## Sequential build path
-
-If you're standing this up from scratch, follow **[docs/SEQUENTIAL_RUNBOOK.md](docs/SEQUENTIAL_RUNBOOK.md)** in order: LiveKit → Gradium → Gemini → Twilio (skip for laptop-mic demo) → Tavily → Fastino → Aikido + Entire. Each step has a one-line checkpoint you have to hit before moving on, so you never debug a broken layer through the layer above it.
-
-## Quickstart (text-mode, no telephony, no API keys yet)
+## Quick start (text mode — no telephony, no API keys)
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env  # fill in keys as they arrive
+cp .env.example .env
 python scripts/run_demo_text.py --crm max_mueller
 ```
 
-The text-mode demo runs Jamie against you typing as the caller, with the GLiNER2 extractor live and the dashboard updating over WebSocket. No phone, no Gradium credits, no waiting on telephony provisioning. Use it to iterate on the system prompt at H0–H4 while infra is being wired.
+Runs Jamie against typed input with the GLiNER2 extractor live and the dashboard updating
+over WebSocket. Coverage questions trigger `coverage_lookup`, which cites the matching
+policy clause. No paid infrastructure required.
 
-## Quickstart (voice, Gradbot)
+For the voice loop and Twilio SIP setup, see [telephony/README.md](telephony/README.md).
 
-```bash
-export GRADIUM_API_KEY=...
-export GRADIUM_VOICE_ID=...   # Emma flagship is fine
-python voice/gradbot_quickstart.py --crm max_mueller
-```
+## Retrieval
 
-## Quickstart (production: LiveKit + Gradium + Twilio SIP)
-
-See `telephony/README.md`. Provision a LiveKit room, point Twilio SIP at it, run `python voice/livekit_agent.py`.
-
-## Bounty wiring
-
-- **Inca / Human Test** — `agent/prompts.py` (Known-Context injection), `tools/tavily_lookup.py` (real-time weather), `voice/livekit_agent.py` (low-latency loop), `tests/juror_bot.py` (proves pass-rate before judges).
-- **Aikido (€1000)** — `docs/SECURITY.md`, `agent/pii_redact.py` redactor, `aikido.yml` CI gate placeholder, repo connected at `app.aikido.dev` from commit zero.
-- **Fastino / Pioneer (Mac Mini)** — `extraction/gliner2_service.py` runs `fastino/gliner2-base-v1`, the model Pioneer is built around. `extraction/benchmark.py` produces the latency / cost / F1 table vs. Gemini structured output.
-- **Gradium (900k credits)** — All three integration tiers shipped: Gradbot prototype, direct `gradium` SDK streaming, `livekit-agents[gradium]` production loop. Voice cloning + multiplexing demo in `voice/multiplex_demo.py`.
-- **Entire** — `entire enable` run in repo root; `docs/ENTIRE.md` documents the architectural decisions.
-
-## Runbook for hackathon day
-
-| Hours | Owner | Goal |
-|---|---|---|
-| H0–H4 | Person A | Voice loop alive (Gradbot first), Person B drafts V1 prompt |
-| H4–H10 | Both | GLiNER2 extraction + Tavily tool, all 13 pillars in the prompt |
-| H10–H18 | Both | Aikido screenshots, Pioneer fine-tune + benchmark, Lovable dashboard polish |
-| H18–H21 | Both | Juror bot run x50, tune voice params, freeze code |
-| H21–H24 | Both | Pitch rehearsal, final `entire enable` summary in README |
-
-See `OPERATION_TURING_ADJUSTER_v2.md` for the full game plan.
-
-## Build journal
-
-Reasoning traces captured by [Entire](docs/ENTIRE.md) — every meaningful
-agent-driven decision in this repo, with the *why* alongside the
-*what*.  The submission story for the Entire bounty is exactly this
-section: clone the repo, read the journal, see how the build actually
-unfolded.
-
-| Date | Dispatch | Phase summary |
-|---|---|---|
-| 2026-04-26 | [docs/entire-dispatches/2026-04-26.md](docs/entire-dispatches/2026-04-26.md) | Full hackathon decision narrative — STT segmentation fix, Pioneer fine-tune, Gradium pronunciation dict (incl. undocumented API discovery), Aikido scan + PII expansion, Tavily 5-surface grounding, architecture pivot to custom GeminiBrain, demo-day resilience layers |
-
-To capture a fresh dispatch covering everything since the last entry:
+The retrieval subsystem (`retrieval/`) runs locally with no paid services — see
+[retrieval/README.md](retrieval/README.md). Quick checks:
 
 ```bash
-bash scripts/setup_entire.sh        # one-shot — installs, enables, dispatches
-# or, after subsequent commits:
-entire dispatch --since 24h > docs/entire-dispatches/$(date +%Y-%m-%d).md
-git add docs/entire-dispatches/ && git commit -m "entire: dispatch $(date +%Y-%m-%d)"
+python -m retrieval.ingest --dry-run     # chunk + embed the corpus, write a manifest
+python -m retrieval.eval                 # precision@k / recall@k / MRR / nDCG
 ```
 
-The pitch line: *"Our build process itself is AI-documented.  Every
-architectural decision our agents made is captured by Entire here —
-version-controlled why alongside the what."*
+Retrieval quality is measured against a golden set of coverage questions mapped to the
+clause each should return (`data/eval/golden_set.jsonl`). The lexical backend and the
+hash embedder are deterministic, so the metrics are reproducible.
+
+## Status
+
+Built: the voice loop, known-context injection, GLiNER2 extraction with a benchmark, the
+tool layer, the dashboard, and the retrieval subsystem (structure-aware ingest, a
+Qdrant named-vector index, query + rerank, the cited `coverage_lookup` tool, and the
+ranking-metric evaluation).
+
+Next: an LLMOps layer (versioned prompt registry, LLM-judge groundedness scoring,
+PII-redacted trace logging, a CI eval gate, and drift monitoring) and zero-downtime
+embedding-model migration. The retrieval index already stores vectors under named
+versions so two embedding models can coexist, which is what the migration builds on.
+
+## License
+
+See [LICENSE](LICENSE).
