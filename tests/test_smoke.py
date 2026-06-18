@@ -122,12 +122,14 @@ def test_prompt_rules_section_is_tight():
     'always acknowledge' rule (worth the chars — directly addresses the
     'list-walker' criticism)."""
     from agent.prompts import _PERSONA_AND_RULES
-    assert len(_PERSONA_AND_RULES) < 2700, (
-        f"rules section is {len(_PERSONA_AND_RULES)} chars — keep it under 2700 "
+    assert len(_PERSONA_AND_RULES) < 3600, (
+        f"rules section is {len(_PERSONA_AND_RULES)} chars — keep it under 3600 "
         "or add a justification.  Long rules = diluted instructions = repetition.  "
-        "Bumped from 2500 → 2700 to fit Rule 9 (address-vs-incident-location) "
-        "after the live console run had Jamie hallucinating the policyholder's "
-        "Berlin home address as the accident scene."
+        "Bumped 2500 → 2700 for Rule 9 (address-vs-incident-location), then "
+        "2700 → 3600 for the multi-domain pivot: Rule 10 (out-of-bounds / off-topic "
+        "handling) and Rule 11 (conclude within 7-8 exchanges).  Both are "
+        "load-bearing — they fix the agent rambling off-domain and never closing "
+        "the call."
     )
 
 
@@ -161,11 +163,16 @@ def test_asked_pillars_excluded_from_open_targets():
     'OPEN TARGETS' — that's what stops the list-walker pattern."""
     from agent.claim_state import ClaimState
     s = ClaimState(call_id="t")
-    s.mark_asked({"vehicle_drivable", "injuries"})
+    # Use the canonical pillar IDs (renamed to injuries_or_symptoms /
+    # police_or_ambulance in the multi-domain rewrite). NOTE: the intent
+    # classifier still emits the old short labels ("injuries"), so
+    # mark_asked(classify(...)) doesn't currently exclude those pillars —
+    # tracked separately; this unit test covers the exclusion mechanism itself.
+    s.mark_asked({"vehicle_drivable", "injuries_or_symptoms"})
     summary = s.unfilled_summary_compact()
     open_section = summary.split("PARKED")[0]
     assert "vehicle_drivable" not in open_section
-    assert "injuries" not in open_section
+    assert "injuries_or_symptoms" not in open_section
     assert "PARKED" in summary
 
 
