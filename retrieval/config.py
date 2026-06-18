@@ -63,6 +63,10 @@ class Settings:
     corpus_dir: str = os.getenv("CORPUS_DIR", "data/policies")
     ingest_manifest_path: str = os.getenv("INGEST_MANIFEST_PATH", ".cache/ingest_manifest.json")
 
+    # Golden set for retrieval-quality evaluation (eval.py).
+    golden_set_path: str = os.getenv("GOLDEN_SET_PATH", "data/eval/golden_set.jsonl")
+    eval_k: int = int(os.getenv("EVAL_K", "5"))
+
     versions: dict[str, EmbeddingVersion] = field(default_factory=lambda: dict(EMBEDDING_VERSIONS))
 
     def version(self, name: str) -> EmbeddingVersion:

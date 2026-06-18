@@ -1,0 +1,11 @@
+{"query": "Wie hoch ist die Selbstbeteiligung in der Teilkasko?", "relevant_clause_ids": ["KK-300:§ 4"], "note": "deductible amount"}
+{"query": "Sind Parkschäden an der Stoßstange in der Vollkasko gedeckt?", "relevant_clause_ids": ["KK-300:§ 6"], "note": "parking bumper damage"}
+{"query": "Ist Vandalismus durch Dritte in der Vollkasko versichert?", "relevant_clause_ids": ["KK-300:§ 5"], "note": "vandalism scope"}
+{"query": "Deckt die Teilkasko Glasbruch und Sturmschäden?", "relevant_clause_ids": ["KK-300:§ 3"], "note": "partial cover scope"}
+{"query": "Gilt der Versicherungsschutz in den Mitgliedstaaten der Europäischen Union?", "relevant_clause_ids": ["KK-300:§ 2"], "note": "geographic scope"}
+{"query": "Welche Schäden sind vom Versicherungsschutz ausgeschlossen?", "relevant_clause_ids": ["KK-300:§ 7"], "note": "exclusions"}
+{"query": "Was ist Gegenstand der Kfz-Versicherung?", "relevant_clause_ids": ["KK-300:§ 1"], "note": "subject of insurance"}
+{"query": "Muss ich den Versicherungsfall unverzüglich anzeigen?", "relevant_clause_ids": ["vvg-auszug:§ 30"], "note": "duty to notify"}
+{"query": "Welche Pflicht zur Abwendung und Minderung des Schadens habe ich?", "relevant_clause_ids": ["vvg-auszug:§ 82"], "note": "mitigation duty"}
+{"query": "Was passiert bei Verletzung einer vertraglichen Obliegenheit?", "relevant_clause_ids": ["vvg-auszug:§ 28"], "note": "breach of duty"}
+{"query": "Muss ich eine Mehrfachversicherung für dasselbe Interesse anzeigen?", "relevant_clause_ids": ["vvg-auszug:§ 104"], "note": "multiple insurance"}
