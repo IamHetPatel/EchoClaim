@@ -1,124 +1,113 @@
-# Telephony bridge — Twilio SIP → LiveKit room → Jamie
+# Telephony bridge — Twilio SIP → LiveKit room → agent
 
-The whole demo only works once an inbound phone number is wired into a LiveKit room that the agent worker is listening on.
+An inbound phone number is wired into a LiveKit room that the agent worker listens on.
 
-## Inca-issued credentials → our `.env` mapping
+## Credentials → `.env`
 
-Inca usually hands out **scoped API-Key credentials** (more secure than master Auth Token). Map them like this:
+Scoped API-Key credentials (preferred over a master Auth Token) map as:
 
-| What Inca gave you | Where it goes in `.env` |
-| ------------------ | ----------------------- |
-| `AccountSID`       | `TWILIO_ACCOUNT_SID`    |
-| `APIKeySID`        | `TWILIO_API_KEY_SID`    |
-| `APIKeySecret`     | `TWILIO_API_KEY_SECRET` |
-| phone number       | `TWILIO_PHONE_NUMBER`   |
+| Credential | `.env` variable |
+| --- | --- |
+| `AccountSID` | `TWILIO_ACCOUNT_SID` |
+| `APIKeySID` | `TWILIO_API_KEY_SID` |
+| `APIKeySecret` | `TWILIO_API_KEY_SECRET` |
+| phone number | `TWILIO_PHONE_NUMBER` |
 
-Leave `TWILIO_AUTH_TOKEN` empty — `telephony/twilio_client.py` auto-detects API-Key mode when `TWILIO_API_KEY_SID` is set.
+Leave `TWILIO_AUTH_TOKEN` empty — `telephony/twilio_client.py` auto-detects API-Key mode
+when `TWILIO_API_KEY_SID` is set. With a master-credential account instead, fill
+`TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` and leave the API-Key fields empty.
 
-If instead you have your _own_ Twilio account with master creds, fill `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` and leave the API-Key fields empty.
-
-### Verify the credentials work
+### Verify the credentials
 
 ```bash
 python telephony/twilio_client.py
 ```
 
-That fetches your account and lists phone numbers. Output should look like:
+Fetches the account and lists phone numbers:
 
 ```
   Twilio: API-Key mode (scoped credential)
-  ✓ authenticated as account 'INCA Hackathon', status=active
+  ✓ authenticated as account '<account name>', status=active
   ✓ 1 phone number(s) on this account:
       +49xxxxxxxxxxx  →  voice URL: (none set)
 ```
 
-If you see `✗ HTTP 401`: the API-Key SID/Secret pair doesn't match the AccountSID. Re-check what Inca pasted into Slack.
+`✗ HTTP 401` means the API-Key SID/Secret pair doesn't match the AccountSID.
 
 ## Wiring the number → LiveKit room
 
-Two paths — pick whichever Inca's setup matches.
+### Path A — provider-provisioned SIP (preferred)
 
-### Path A — Inca-provisioned SIP (preferred)
+1. Set `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` in `.env`. If you have an
+   explicit SIP endpoint (e.g. `sip:<id>.sip.livekit.cloud`), set `LIVEKIT_SIP_URI` too.
+2. Configure the SIP trunk in the LiveKit dashboard with that URI.
+3. Run `python voice/livekit_agent.py`.
+4. Place an inbound test call.
 
-Ask in the hackathon Slack for the LiveKit SIP dispatch URI. Then:
-
-1. `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` in `.env`.
-   If Inca gives an explicit SIP endpoint (for example,
-   `sip:uloklnbmk2j.sip.livekit.cloud`), set `LIVEKIT_SIP_URI` too.
-2. Configure the SIP trunk in the LiveKit dashboard with the URI Inca gave you.
-3. `python voice/livekit_agent.py` in one terminal.
-4. Place the inbound test call.
-
-### Path B — DIY Twilio Elastic SIP Trunk
+### Path B — Twilio Elastic SIP Trunk
 
 1. Twilio Console → Elastic SIP Trunking → create a trunk.
 2. Origination URI: `sip:<your-livekit-sip-uri>` from the LiveKit project page.
-3. In the trunk's "Numbers" tab, add the Inca-issued number.
-4. `python voice/livekit_agent.py`.
-5. Call the number; LiveKit dispatches to the worker; Jamie picks up.
+3. Add the number under the trunk's "Numbers" tab.
+4. Run `python voice/livekit_agent.py` and call the number.
 
-## Latency budget (target <740ms total)
+## Latency budget (target < 740ms total)
 
-| Step                           | Budget |
-| ------------------------------ | ------ |
-| STT (Gradium / Whisper)        | <120ms |
-| Gemini 2.5 Flash first-token   | <220ms |
-| Gradium TTS first-audio (TTFT) | <300ms |
-| Network + jitter               | <100ms |
+| Step | Budget |
+| --- | --- |
+| STT (Gradium / Whisper) | < 120ms |
+| Gemini 2.5 Flash first token | < 220ms |
+| Gradium TTS first audio (TTFT) | < 300ms |
+| Network + jitter | < 100ms |
 
-We close any remaining gap with **filler audio** (`fillers/manifest.json`): the moment a tool call is dispatched, we play "Let me just pull up the map…" so perceived latency drops below the 500ms uncanny-valley threshold.
+Any remaining gap is masked with filler audio (`fillers/manifest.json`): the moment a tool
+call is dispatched, a short "let me just pull up the map…" clip plays, keeping perceived
+latency below the ~500ms threshold.
 
 ## Multiplexing
 
-Single WebSocket, multiple `client_req_id` concurrent TTS streams — see `voice/multiplex_demo.py`. This is the bounty pitch story for "production scale."
+A single WebSocket carries multiple `client_req_id` concurrent TTS streams — see
+`voice/multiplex_demo.py`. This is the path for concurrent calls at production scale.
 
----
+## Running without Twilio Console access
 
-## Operating without Twilio Console access
-
-If Inca handed you API credentials but not dashboard login, you can't open the Voice Configuration UI — but the demo doesn't depend on it. Here are the paths that work tonight while you wait on Twilio.
-
-### Verify what you already have
+If you have API credentials but not dashboard login, the demo still works.
 
 ```bash
-python telephony/setup_sip.py list      # LiveKit trunk + rule + SIP URI
-python telephony/twilio_client.py        # Twilio creds — known to 401 right now
+python telephony/setup_sip.py list   # LiveKit trunk + rule + SIP URI
+python telephony/twilio_client.py    # Twilio credential check
 ```
 
-The LiveKit side is already wired. The only missing hop is Twilio → LiveKit's SIP URI. Three ways to demo without that hop:
+The LiveKit side is wired; the only missing hop is Twilio → LiveKit's SIP URI. Three ways
+to demo without it:
 
-### Path 1 — Local laptop demo (zero infra, ~10 sec to start)
-
-Best for solo iteration and proving the pipeline. No LiveKit Cloud round-trip.
+### Path 1 — Local laptop (zero infra)
 
 ```bash
 python voice/livekit_agent.py console
 ```
 
-Uses MacBook mic + speakers via `sounddevice`. Same JamieAgent code as production, same bridge events. The only difference: no LiveKit room, no telephony.
+Uses the machine's mic + speakers via `sounddevice`. Same agent code and bridge events as
+production, without a LiveKit room or telephony.
 
-### Path 2 — Browser caller via LiveKit Agents Playground (~3 min)
+### Path 2 — Browser caller via LiveKit Agents Playground
 
-Best for showing judges. Caller experience matches a real phone call.
-
-1. `python voice/livekit_agent.py start` (already running ✓)
+1. `python voice/livekit_agent.py start`
 2. Open https://agents-playground.livekit.io
-3. "Connect to a custom server" → paste:
-   - URL: `wss://bbh-inca-n9i26bo3.livekit.cloud`
-   - API Key + API Secret from `.env`
-4. Click "Connect" → playground creates a room → your worker auto-dispatches → talk to Jamie in the browser.
+3. "Connect to a custom server" → URL `wss://<your-project>.livekit.cloud`, plus API Key
+   and Secret from `.env`.
+4. Connect → the worker auto-dispatches → talk to the agent in the browser.
 
-This path uses your LiveKit project end-to-end (token auth, SIP-side dispatch rule still works for phone tomorrow). The browser caller is a fully realistic stand-in for Twilio.
+Exercises the LiveKit project end to end and stands in for a phone caller.
 
-### Path 3 — Programmatic Twilio config (when creds work)
-
-Once Inca refreshes the API Key:
+### Path 3 — Programmatic Twilio config
 
 ```bash
-python telephony/configure_twilio.py status   # what's set today
+python telephony/configure_twilio.py status   # current config
 TWIML_URL=https://your-host/twiml.xml \
-  python telephony/configure_twilio.py apply  # point # at LiveKit
-python telephony/configure_twilio.py revert   # undo
+  python telephony/configure_twilio.py apply   # point the number at LiveKit
+python telephony/configure_twilio.py revert    # undo
 ```
 
-The `apply` step needs a public URL serving the TwiML payload (which the script prints for you). For hackathon speed: `python -m http.server 5000` + `ngrok http 5000`. Or a Cloudflare Worker. Or once you have Console access, a TwiML Bin.
+`apply` needs a public URL serving the TwiML payload the script prints (e.g.
+`python -m http.server 5000` + a tunnel, a Cloudflare Worker, or a TwiML Bin).
