@@ -1,0 +1,36 @@
+for context:
+full drop-in package in My Profile/echoclaim-spine/ (16 Python modules, all compiling, + docs, CI gate, and ZIH SLURM scripts).
+The call, recapped: extend EchoClaim rather than build fresh. It's already a near-flagship in a German-insurance domain; the only real gap vs. your interview list was the operational spine, so that's what this adds.
+What's in the package:
+
+BUILD_PLAN.md — the master brief. Architecture, the zero-downtime migration design, eval methodology, LLMOps, ZIH usage, a PR-by-PR roadmap (PR1→PR7), an interview-question→code map (covers ~your whole list), and STAR resume bullets. This is the "no missing context" doc.
+spine/retrieval/ — RAG over the policy corpus: structure-aware chunker, version-stamped embedder, Qdrant named-vector index, retriever+reranker, coverage_lookup Gemini tool, precision@k/nDCG eval, and migrate.py (the zero-downtime re-index centerpiece).
+spine/llmops/ — prompt registry, LLM-judge groundedness, CI eval gate, PII-redacted trace logging, drift monitor.
+README.md (rewritten, de-hackathoned) + DEHACKATHON_CHECKLIST.md — exact deletions/renames for the docs I can't see (kills the "verified facts April 2026" table, bounty/pitch/H0–H24 framing, the AI build-journal — the things that read as hackathon/AI-generated).
+
+Recommended next step: do the actual in-repo wiring in Claude Code — open the repo, hand it BUILD_PLAN.md as the brief and spine/ as the scaffold, and run PR1→PR4 first (retrieval + migration carry the most interview weight). A 96-commit repo with telephony/voice is better edited in-place there than copied piecemeal.
+
+---
+
+whatever it should be just give me the commit message and staged changes when donee and working or whatever comes in the flow with human requirement
+
+---
+
+done, pushed, move ahead
+
+---
+
+just Fix the extraction import bug first as a small separate commit so the live demo actually runs quickly and check and assign whatever is the best for CLAIM_LABELS/FRAUD_LABELS because  I dont remember any of it
+
+---
+
+let's continue
+
+---
+
+go for it in proper software engineering fundamental sequence, and also we need to make the documentations and all readme and stuff clean, because I don't want marks of hackathon or AI in the contents majorly
+
+---
+
+<ide_opened_file>The user opened the file /Users/hetpatel/Documents/Workspace/BBH/AI-voice-Agent/docs/QUOTA_SURVIVAL.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+continue
