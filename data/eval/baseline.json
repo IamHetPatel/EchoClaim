@@ -1,0 +1,18 @@
+{
+  "metrics": {
+    "precision@5": 0.2188,
+    "ndcg@5": 0.7984,
+    "groundedness": 0.7031,
+    "extraction_f1": 0.5091
+  },
+  "provenance": {
+    "judge_backend": "ollama",
+    "judge_model": "llama3.2:latest",
+    "embed_backend": "sentence-transformers",
+    "rerank_backend": "cross-encoder",
+    "retrieval_backend": "qdrant",
+    "active_version": "emb_v1",
+    "eval_k": 5,
+    "golden_set_sha256": "dbc7e81dca93ff1d"
+  }
+}
