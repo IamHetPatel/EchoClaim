@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "282a61d75a64",
+  "strategy": "manual-commit",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "llmops/README.md",
+    "llmops/__init__.py",
+    "llmops/drift_monitor.py",
+    "llmops/eval_gate.py",
+    "llmops/extraction_eval.py",
+    "llmops/groundedness.py",
+    "llmops/judge.py",
+    "llmops/logging_middleware.py",
+    "llmops/prompt_registry.py",
+    "llmops/prompts/jamie_system.v1.0.0.yaml",
+    "requirements-eval.txt",
+    "tests/test_llmops.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/28/2a61d75a64/0/metadata.json",
+      "transcript": "/28/2a61d75a64/0/full.jsonl",
+      "content_hash": "/28/2a61d75a64/0/content_hash.txt",
+      "prompt": "/28/2a61d75a64/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  }
+}
