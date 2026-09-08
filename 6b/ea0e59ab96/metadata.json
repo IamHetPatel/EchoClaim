@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "6bea0e59ab96",
+  "strategy": "manual-commit",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/llm-eval.yml",
+    ".github/workflows/tests.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6b/ea0e59ab96/0/metadata.json",
+      "transcript": "/6b/ea0e59ab96/0/full.jsonl",
+      "content_hash": "/6b/ea0e59ab96/0/content_hash.txt",
+      "prompt": "/6b/ea0e59ab96/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  }
+}

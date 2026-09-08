@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "6bea0e59ab96",
+  "session_id": "05fe23d7-9d7f-4a4f-a12c-7298990632d7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T16:20:59.761293Z",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/llm-eval.yml",
+    ".github/workflows/tests.yml"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "4ef4f1760ff0",
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-08T16:20:59.710778Z",
+    "agent_lines": 118,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 118,
+    "total_lines_changed": 118,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
