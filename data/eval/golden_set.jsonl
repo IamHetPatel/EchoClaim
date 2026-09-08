@@ -1,11 +1,32 @@
-{"query": "Wie hoch ist die Selbstbeteiligung in der Teilkasko?", "relevant_clause_ids": ["KK-300:§ 4"], "note": "deductible amount"}
-{"query": "Sind Parkschäden an der Stoßstange in der Vollkasko gedeckt?", "relevant_clause_ids": ["KK-300:§ 6"], "note": "parking bumper damage"}
-{"query": "Ist Vandalismus durch Dritte in der Vollkasko versichert?", "relevant_clause_ids": ["KK-300:§ 5"], "note": "vandalism scope"}
-{"query": "Deckt die Teilkasko Glasbruch und Sturmschäden?", "relevant_clause_ids": ["KK-300:§ 3"], "note": "partial cover scope"}
-{"query": "Gilt der Versicherungsschutz in den Mitgliedstaaten der Europäischen Union?", "relevant_clause_ids": ["KK-300:§ 2"], "note": "geographic scope"}
-{"query": "Welche Schäden sind vom Versicherungsschutz ausgeschlossen?", "relevant_clause_ids": ["KK-300:§ 7"], "note": "exclusions"}
-{"query": "Was ist Gegenstand der Kfz-Versicherung?", "relevant_clause_ids": ["KK-300:§ 1"], "note": "subject of insurance"}
-{"query": "Muss ich den Versicherungsfall unverzüglich anzeigen?", "relevant_clause_ids": ["vvg-auszug:§ 30"], "note": "duty to notify"}
-{"query": "Welche Pflicht zur Abwendung und Minderung des Schadens habe ich?", "relevant_clause_ids": ["vvg-auszug:§ 82"], "note": "mitigation duty"}
-{"query": "Was passiert bei Verletzung einer vertraglichen Obliegenheit?", "relevant_clause_ids": ["vvg-auszug:§ 28"], "note": "breach of duty"}
-{"query": "Muss ich eine Mehrfachversicherung für dasselbe Interesse anzeigen?", "relevant_clause_ids": ["vvg-auszug:§ 104"], "note": "multiple insurance"}
+{"query": "Wie hoch ist die Selbstbeteiligung in der Teilkasko?", "relevant_clause_ids": ["KK-300:§ 4"], "difficulty": "easy", "note": "clause vocabulary reused verbatim; keeps a floor of easy signal"}
+{"query": "Was ist Gegenstand der Kfz-Versicherung?", "relevant_clause_ids": ["KK-300:§ 1"], "difficulty": "easy", "note": "verbatim heading match"}
+{"query": "Welche Schäden sind vom Versicherungsschutz ausgeschlossen?", "relevant_clause_ids": ["KK-300:§ 7", "HP-100:§ 6", "RS-200:§ 5"], "difficulty": "easy", "note": "three exclusion clauses across three products"}
+{"query": "Mein Auto wurde geklaut, was muss ich selber zahlen?", "relevant_clause_ids": ["KK-300:§ 4"], "difficulty": "hard", "note": "caller wording; distractors RS-200:§2 (250 EUR) and SB-400:§1 (also 150 EUR)"}
+{"query": "Was kostet mich das aus eigener Tasche, wenn ich einen Anwalt brauche?", "relevant_clause_ids": ["RS-200:§ 2"], "difficulty": "hard", "note": "second Selbstbeteiligung in the corpus; must not return the Kasko one"}
+{"query": "Muss ich was dazuzahlen, wenn ich jemand anderem einen Schaden gemacht habe?", "relevant_clause_ids": ["HP-100:§ 3"], "difficulty": "hard", "note": "answer is 'no deductible'; third Selbstbeteiligung clause"}
+{"query": "Jemand hat mir nachts das Auto zerkratzt, zahlt ihr das?", "relevant_clause_ids": ["KK-300:§ 5"], "difficulty": "hard", "note": "'zerkratzt' must map to Vandalismus"}
+{"query": "Beim Rückwärtsfahren hat mir jemand die Stoßstange eingedellt und ist abgehauen.", "relevant_clause_ids": ["KK-300:§ 6"], "difficulty": "medium", "note": "Parkschaden without ermittelter Verursacher"}
+{"query": "Ich bin gestern Abend gegen einen Hirsch gefahren, ist das drin?", "relevant_clause_ids": ["KK-300:§ 3"], "difficulty": "hard", "note": "'Hirsch' must map to Haarwild; no lexical overlap"}
+{"query": "Die Windschutzscheibe ist mir gesprungen.", "relevant_clause_ids": ["KK-300:§ 3"], "difficulty": "medium", "note": "Glasbruch paraphrase"}
+{"query": "Mein Auto ist komplett abgebrannt.", "relevant_clause_ids": ["KK-300:§ 3"], "difficulty": "medium", "note": "Brand paraphrase"}
+{"query": "Ein Sturm hat mir einen Ast aufs Dach geworfen.", "relevant_clause_ids": ["KK-300:§ 3"], "difficulty": "medium", "note": "Sturm paraphrase"}
+{"query": "Ich fahre nächste Woche in die Türkei, gilt mein Schutz da unten?", "relevant_clause_ids": ["KK-300:§ 2", "SB-400:§ 3"], "difficulty": "hard", "note": "two different Geltungsbereiche that disagree; both must surface"}
+{"query": "Wann muss ich euch eigentlich Bescheid sagen, dass was passiert ist?", "relevant_clause_ids": ["vvg-auszug:§ 30", "HP-100:§ 4"], "difficulty": "hard", "note": "two reporting deadlines, unverzüglich vs one week"}
+{"query": "Ich habe den Schaden erst nach drei Wochen gemeldet, ist das ein Problem?", "relevant_clause_ids": ["vvg-auszug:§ 30"], "difficulty": "medium", "note": "delayed reporting; overlaps the fraud-signal pillar"}
+{"query": "Wenn ich absichtlich was kaputt mache, zahlt ihr dann?", "relevant_clause_ids": ["KK-300:§ 7", "HP-100:§ 6", "RS-200:§ 5"], "difficulty": "medium", "note": "Vorsatz excluded in all three products"}
+{"query": "Ich war bei einem Autorennen dabei und da ist was passiert.", "relevant_clause_ids": ["KK-300:§ 7", "HP-100:§ 6", "RS-200:§ 5"], "difficulty": "medium", "note": "Rennen excluded in all three; tests multi-doc recall"}
+{"query": "Mein Wagen springt nicht an und ich stehe auf der Autobahn.", "relevant_clause_ids": ["SB-400:§ 1"], "difficulty": "medium", "note": "Panne paraphrase, no shared vocabulary"}
+{"query": "Wer bezahlt das Abschleppen zur Werkstatt?", "relevant_clause_ids": ["SB-400:§ 2"], "difficulty": "easy", "note": "direct match"}
+{"query": "Bekomme ich einen Ersatzwagen, solange meiner in der Werkstatt steht?", "relevant_clause_ids": ["SB-400:§ 5"], "difficulty": "medium", "note": "'Ersatzwagen' must map to Mietwagen"}
+{"query": "Darf ich dem anderen Fahrer einfach sagen, dass ich schuld war?", "relevant_clause_ids": ["HP-100:§ 5"], "difficulty": "hard", "note": "Anerkenntnisverbot in plain caller language"}
+{"query": "Wie viel zahlt ihr maximal, wenn ich jemanden schwer verletze?", "relevant_clause_ids": ["HP-100:§ 2"], "difficulty": "medium", "note": "per-person Personenschaden cap"}
+{"query": "Ich habe erst letzten Monat abgeschlossen, kann ich jetzt schon einen Anwalt nehmen?", "relevant_clause_ids": ["RS-200:§ 3"], "difficulty": "hard", "note": "Wartezeit; query never says Wartezeit"}
+{"query": "Muss ich euch fragen, bevor ich den Pannendienst rufe?", "relevant_clause_ids": ["SB-400:§ 4"], "difficulty": "medium", "note": "distractor RS-200:§4 is also a prior-approval clause"}
+{"query": "Muss ich zur Polizei, wenn mein Auto weg ist?", "relevant_clause_ids": ["KK-300:§ 4"], "difficulty": "medium", "note": "Abs. 3 of a clause whose headline topic is the deductible"}
+{"query": "Was passiert, wenn ich mich nicht an die Vertragsregeln halte?", "relevant_clause_ids": ["vvg-auszug:§ 28"], "difficulty": "medium", "note": "Obliegenheitsverletzung paraphrase"}
+{"query": "Muss ich versuchen, den Schaden klein zu halten?", "relevant_clause_ids": ["vvg-auszug:§ 82"], "difficulty": "medium", "note": "Schadenminderungspflicht paraphrase"}
+{"query": "Ich bin bei zwei Versicherungen für dasselbe Auto angemeldet.", "relevant_clause_ids": ["vvg-auszug:§ 104"], "difficulty": "medium", "note": "Mehrfachversicherung paraphrase"}
+{"query": "Zahlt ihr auch Schäden an meinem eigenen Auto, wenn ich selbst schuld bin?", "relevant_clause_ids": ["KK-300:§ 5", "HP-100:§ 1"], "difficulty": "hard", "note": "Vollkasko covers it, Haftpflicht explicitly does not; both are needed"}
+{"query": "Zahlt ihr, wenn ich selbst als Fahrer verletzt werde?", "relevant_clause_ids": ["HP-100:§ 6"], "difficulty": "hard", "note": "driver's own injury is excluded; easy to confuse with the §2 cap"}
+{"query": "Sind Verschleißteile mitversichert?", "relevant_clause_ids": ["KK-300:§ 7"], "difficulty": "medium", "note": "Verschleiß exclusion"}
+{"query": "Ich habe eine Anzeige bekommen wegen dem Unfall, was mache ich jetzt?", "relevant_clause_ids": ["HP-100:§ 4", "RS-200:§ 1"], "difficulty": "hard", "note": "Ermittlungsverfahren notice plus legal-expenses cover"}

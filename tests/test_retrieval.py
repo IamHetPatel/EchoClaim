@@ -91,7 +91,7 @@ def test_ingest_dry_run_records_embedding_version():
 
     manifest = ingest(str(REPO / "data" / "policies"), dry_run=True, backend="hash")
     assert manifest["n_chunks"] > 0
-    assert manifest["n_docs"] == 2
+    assert manifest["n_docs"] == len(list((REPO / "data" / "policies").glob("*.md")))
     assert settings.active_version in manifest["embedding_versions"]
     ev = manifest["embedding_versions"][settings.active_version]
     assert ev["model_id"] and ev["dim"] == settings.version(settings.active_version).dim
