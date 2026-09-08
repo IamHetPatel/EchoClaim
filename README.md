@@ -46,10 +46,12 @@ telephony/     Twilio SIP / LiveKit room glue
 extraction/    GLiNER2 microservice + benchmark vs. LLM structured output
 tools/         Real-time lookups exposed as function calls (Tavily, coverage_lookup)
 retrieval/     RAG over the policy corpus: chunking, embedding, index, retriever, eval
+llmops/        Prompt registry, LLM judge, CI eval gate, trace logging, drift monitor
 bridge/        FastAPI WebSocket bridge to the dashboard
 dashboard/     React dashboard
 data/          Mock CRM profiles, the policy corpus, and the retrieval golden set
 tests/         Unit + adversarial conversation tests
+.github/       CI: test suite, and the eval gate that blocks quality regressions
 scripts/       run_demo_text.py and other operator commands
 ```
 
@@ -82,17 +84,43 @@ Retrieval quality is measured against a golden set of coverage questions, each m
 the clause it should return (`data/eval/golden_set.jsonl`). The lexical backend and the
 hash embedder are deterministic, so the metrics are reproducible.
 
+## Evaluation and CI
+
+Two workflows run in CI. `tests.yml` runs the unit suite on the offline paths (BM25
+backend, hash embedder) — no model download, no server, no API key. `llm-eval.yml` stands
+up Qdrant, ingests the committed corpus, and runs the eval gate, which fails the build if
+a gated metric regresses past its tolerance band. See [llmops/README.md](llmops/README.md).
+
+Retrieval quality is measured against a golden set of caller questions, each mapped to
+the clause it should return (`data/eval/golden_set.jsonl`). The set is deliberately
+adversarial: most queries are phrased the way a caller would speak rather than the way
+the clause is written, and the corpus carries near-miss distractors (three different
+deductible clauses, two disagreeing territorial-scope clauses, three exclusion clauses
+that all mention racing). Measured over 32 queries against a live Qdrant:
+
+| Recall backend | precision@5 | recall@5 | MRR | nDCG@5 |
+|---|---|---|---|---|
+| BM25 lexical | 0.094 | 0.359 | 0.314 | 0.323 |
+| BGE-M3 + `bge-reranker-v2-m3` | 0.219 | 0.839 | 0.805 | 0.798 |
+
+Reproduce with `python -m retrieval.compare_backends`. The gap is the point of the dense
+stack: BM25 cannot connect a caller saying "gegen einen Hirsch gefahren" to a clause that
+says "Zusammenstoß mit Haarwild". Four queries still miss at k=5, which is deliberate —
+a saturated eval cannot detect a regression.
+
 ## Status
 
-Built so far: the voice loop, known-context injection, GLiNER2 extraction with a
-benchmark, the tool layer, the dashboard, and the retrieval subsystem (structure-aware
-ingest, a Qdrant named-vector index, query plus rerank, the cited `coverage_lookup` tool,
-and the ranking-metric evaluation).
+Built: the voice loop, known-context injection, GLiNER2 extraction with a benchmark, the
+tool layer, the dashboard, the retrieval subsystem (structure-aware ingest, a Qdrant
+named-vector index, query plus rerank, the cited `coverage_lookup` tool, ranking-metric
+evaluation), and the LLMOps layer (prompt registry, LLM-judge groundedness, the CI eval
+gate, PII-redacted trace logging, drift monitoring).
 
-Next: an LLMOps layer (versioned prompt registry, LLM-judge groundedness scoring,
-PII-redacted trace logging, a CI eval gate, drift monitoring) and zero-downtime
-embedding-model migration. The retrieval index already stores vectors under named
-versions so two embedding models can coexist, which is what the migration builds on.
+Not yet done: zero-downtime embedding-model migration. The index already stores vectors
+under named versions so two embedding models can coexist, which is what the migration
+builds on, but the introduce / dual-write / backfill / shadow-eval / cutover / rollback
+sequence is not implemented or rehearsed. Drift monitoring is implemented and unit-tested
+but has not run over a production trace volume.
 
 ## License
 
