@@ -1,0 +1,29 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements-eval.txt
+      - name: Run tests
+        # The suite runs on the offline paths (lexical backend, hash embedder) so it
+        # needs no model download, no Qdrant and no API key.
+        env:
+          RETRIEVAL_BACKEND: lexical
+          EMBED_BACKEND: hash
+        run: python -m pytest tests/ -q

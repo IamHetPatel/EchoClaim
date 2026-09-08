@@ -1,0 +1,89 @@
+name: llm-eval-gate
+
+# Runs the evaluation gate on any change that can move model quality.
+# Fails the PR if retrieval, groundedness or extraction metrics regress past the
+# tolerance bands in llmops/eval_gate.py.
+on:
+  pull_request:
+    paths:
+      - "llmops/**"
+      - "retrieval/**"
+      - "extraction/**"
+      - "agent/**"
+      - "data/policies/**"
+      - "data/eval/**"
+      - ".github/workflows/llm-eval.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: llm-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    # The cross-encoder is ~1 s per (query, candidate) pair on CPU and CI runners have
+    # no GPU, so a 32-query gate run is tens of minutes. Measured locally at ~15 min
+    # after the gate was changed to retrieve once and score both metrics from that pass.
+    timeout-minutes: 60
+    services:
+      qdrant:
+        image: qdrant/qdrant:v1.12.1
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "bash -c ':> /dev/tcp/127.0.0.1/6333'"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      QDRANT_URL: http://localhost:6333
+      # The gate reads only the committed corpus and golden set, so the index it
+      # builds is hermetic: same inputs, same vectors, same metrics on every run.
+      CORPUS_DIR: data/policies
+      GOLDEN_SET_PATH: data/eval/golden_set.jsonl
+      EMBED_BACKEND: sentence-transformers
+      RETRIEVAL_BACKEND: qdrant
+      # Explicit, not 'auto': the cross-encoder is ~98% of query latency, so it is
+      # opt-in for the live path but always on for scoring. Baseline and gate must
+      # therefore use the same setting or the comparison is meaningless.
+      RERANK_BACKEND: cross-encoder
+      TORCH_DEVICE: cpu
+      JUDGE_BACKEND: gemini
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements-eval.txt
+
+      - name: Cache embedding models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ hashFiles('requirements-eval.txt') }}
+
+      - name: Ingest the committed corpus into Qdrant
+        run: python -m retrieval.ingest --recreate
+
+      - name: Run eval gate
+        # --strict: a gated metric that could not be measured fails the build, so a
+        # missing API key surfaces as a red run instead of a silent pass.
+        run: python -m llmops.eval_gate --baseline data/eval/baseline.json --strict
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: |
+            data/eval/baseline.json
+            data/eval/last_run.json
+          if-no-files-found: ignore
