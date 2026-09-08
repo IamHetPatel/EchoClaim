@@ -73,7 +73,7 @@ class CrossEncoderReranker:
         if self._model is None:
             from sentence_transformers import CrossEncoder
 
-            self._model = CrossEncoder(self.model_id)
+            self._model = CrossEncoder(self.model_id, device=settings.torch_device)
         return self._model
 
     def rerank(self, query: str, hits: list[Hit], top_k: int | None = None) -> list[Hit]:
@@ -111,15 +111,23 @@ class LexicalReranker:
 
 
 def get_reranker(backend: str | None = None):
-    """Return a reranker. ``RERANK_BACKEND`` env: auto | cross-encoder | lexical."""
-    backend = backend or os.getenv("RERANK_BACKEND", "auto")
-    if backend == "lexical":
-        return LexicalReranker()
-    if backend == "cross-encoder":
-        return CrossEncoderReranker()
-    # auto: prefer the real model, fall back to lexical when the dep is absent.
-    import importlib.util
+    """Return a reranker. ``RERANK_BACKEND`` env: auto | cross-encoder | lexical.
 
-    if importlib.util.find_spec("sentence_transformers") is not None:
+    ``auto`` resolves to the **lexical** reranker, deliberately.
+
+    bge-reranker-v2-m3 is a 568M-parameter cross-encoder that scores every
+    (query, candidate) pair. Measured on this corpus on CPU, reranking 27 candidates
+    takes ~28 s, against ~456 ms for BGE-M3 recall and ~8 ms for lexical reranking — so
+    it is ~98% of query latency. That is fine offline, and it is worth a lot of quality
+    (nDCG@5 0.32 -> 0.80), but it cannot sit inside a real-time phone call.
+
+    So the cross-encoder is opt-in rather than automatic: an earlier version of this
+    function returned it whenever ``sentence_transformers`` merely happened to be
+    importable, which meant installing the embedding dependency silently put a
+    ~28 s rerank in the live voice path. The eval and CI set ``RERANK_BACKEND=cross-encoder``
+    explicitly; the live agent leaves it on ``auto`` and stays fast.
+    """
+    backend = backend or os.getenv("RERANK_BACKEND", "auto")
+    if backend == "cross-encoder":
         return CrossEncoderReranker()
     return LexicalReranker()

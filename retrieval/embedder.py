@@ -102,7 +102,7 @@ class Embedder(_BaseEmbedder):
         if self._model is None:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self.version.model_id)
+            self._model = SentenceTransformer(self.version.model_id, device=settings.torch_device)
         return self._model
 
     def _encode_uncached(self, texts: list[str]) -> np.ndarray:
