@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "984884ecfcf8",
+  "strategy": "manual-commit",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "retrieval/index.py",
+    "retrieval/ingest.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/98/4884ecfcf8/0/metadata.json",
+      "transcript": "/98/4884ecfcf8/0/full.jsonl",
+      "content_hash": "/98/4884ecfcf8/0/content_hash.txt",
+      "prompt": "/98/4884ecfcf8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "984884ecfcf8",
+  "session_id": "05fe23d7-9d7f-4a4f-a12c-7298990632d7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T16:16:54.924212Z",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "retrieval/index.py",
+    "retrieval/ingest.py"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "4ef4f1760ff0",
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-08T16:16:54.897706Z",
+    "agent_lines": 35,
+    "agent_removed": 9,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 35,
+    "total_lines_changed": 44,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1936,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "echoclaim-spine/.github/workflows/llm-eval.yml": 44,
+        "echoclaim-spine/BUILD_PLAN.md": 323,
+        "echoclaim-spine/DEHACKATHON_CHECKLIST.md": 75,
+        "echoclaim-spine/README.md": 102,
+        "echoclaim-spine/_START_HERE.md": 43,
+        "echoclaim-spine/architecture.mermaid": 61,
+        "echoclaim-spine/requirements-spine.txt": 11,
+        "echoclaim-spine/slurm/embed_corpus.sbatch": 28,
+        "echoclaim-spine/slurm/finetune_quantize_gliner.sbatch": 30,
+        "echoclaim-spine/spine/eval/golden_set.jsonl": 5,
+        "echoclaim-spine/spine/llmops/README.md": 28,
+        "echoclaim-spine/spine/llmops/__init__.py": 5,
+        "echoclaim-spine/spine/llmops/drift_monitor.py": 70,
+        "echoclaim-spine/spine/llmops/eval_gate.py": 84,
+        "echoclaim-spine/spine/llmops/judge.py": 63,
+        "echoclaim-spine/spine/llmops/logging_middleware.py": 71,
+        "echoclaim-spine/spine/llmops/prompt_registry.py": 72,
+        "echoclaim-spine/spine/prompts/jamie_system.v1.yaml": 22,
+        "echoclaim-spine/spine/retrieval/README.md": 41,
+        "echoclaim-spine/spine/retrieval/__init__.py": 7,
+        "echoclaim-spine/spine/retrieval/chunker.py": 113,
+        "echoclaim-spine/spine/retrieval/config.py": 61,
+        "echoclaim-spine/spine/retrieval/embedder.py": 89,
+        "echoclaim-spine/spine/retrieval/eval.py": 67,
+        "echoclaim-spine/spine/retrieval/index.py": 153,
+        "echoclaim-spine/spine/retrieval/migrate.py": 107,
+        "echoclaim-spine/spine/retrieval/rerank.py": 34,
+        "echoclaim-spine/spine/retrieval/retriever.py": 69,
+        "echoclaim-spine/spine/retrieval/tool.py": 57,
+        "voice/livekit_agent.py": 1
+      },
+      "user_removed_per_file": {
+        "voice/livekit_agent.py": 2
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 3859,
+      "agent_lines_removed": 53
+    }
+  ]
+}
