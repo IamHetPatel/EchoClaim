@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "9631850c22c8",
+  "strategy": "manual-commit",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "data/eval/golden_set.jsonl",
+    "data/policies/hp-100_kfz-haftpflicht.md",
+    "data/policies/rs-200_verkehrsrechtsschutz.md",
+    "data/policies/sb-400_schutzbrief.md",
+    "retrieval/compare_backends.py",
+    "tests/test_retrieval.py",
+    "tests/test_retrieval_eval.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/96/31850c22c8/0/metadata.json",
+      "transcript": "/96/31850c22c8/0/full.jsonl",
+      "content_hash": "/96/31850c22c8/0/content_hash.txt",
+      "prompt": "/96/31850c22c8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  }
+}

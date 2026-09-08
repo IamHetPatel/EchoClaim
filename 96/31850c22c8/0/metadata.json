@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "9631850c22c8",
+  "session_id": "05fe23d7-9d7f-4a4f-a12c-7298990632d7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T16:19:13.418785Z",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "data/eval/golden_set.jsonl",
+    "data/policies/hp-100_kfz-haftpflicht.md",
+    "data/policies/rs-200_verkehrsrechtsschutz.md",
+    "data/policies/sb-400_schutzbrief.md",
+    "retrieval/compare_backends.py",
+    "tests/test_retrieval.py",
+    "tests/test_retrieval_eval.py"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "4ef4f1760ff0",
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-08T16:19:13.393425Z",
+    "agent_lines": 229,
+    "agent_removed": 16,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 229,
+    "total_lines_changed": 245,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
