@@ -39,6 +39,13 @@ class QdrantIndex:
 
     # ---- schema / versions ---------------------------------------------------
 
+    def drop_collection(self) -> None:
+        """Delete the collection if it exists. Used by --recreate for a hermetic run."""
+        try:
+            self.client.delete_collection(self.collection)
+        except Exception:
+            pass  # absent is the desired end state either way
+
     def ensure_collection(self, version_names: list[str]) -> None:
         """Create the collection (if absent) with one named vector per version."""
         from qdrant_client import models
@@ -124,13 +131,26 @@ class QdrantIndex:
                                               match=models.MatchValue(value=lang)))
         flt = models.Filter(must=must) if must else None
 
-        res = self.client.search(
-            self.collection,
-            query_vector=models.NamedVector(name=version, vector=query_vector.tolist()),
-            query_filter=flt,
-            limit=limit,
-            with_payload=True,
-        )
+        # query_points is the current read API; client.search() was deprecated in
+        # qdrant-client 1.10 and removed in 1.19. Keep the old call as a fallback so the
+        # module still works against the older client pinned in some environments.
+        if hasattr(self.client, "query_points"):
+            res = self.client.query_points(
+                self.collection,
+                query=query_vector.tolist(),
+                using=version,          # the named vector to search
+                query_filter=flt,
+                limit=limit,
+                with_payload=True,
+            ).points
+        else:  # pragma: no cover - legacy client
+            res = self.client.search(
+                self.collection,
+                query_vector=models.NamedVector(name=version, vector=query_vector.tolist()),
+                query_filter=flt,
+                limit=limit,
+                with_payload=True,
+            )
         return [Hit(score=p.score, payload=p.payload) for p in res]
 
     # ---- active-version pointer (atomic cutover) -----------------------------
