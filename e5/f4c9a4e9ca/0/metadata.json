@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "e5f4c9a4e9ca",
+  "session_id": "05fe23d7-9d7f-4a4f-a12c-7298990632d7",
+  "strategy": "manual-commit",
+  "created_at": "2026-09-08T16:18:02.49263Z",
+  "branch": "llmops-eval-gate",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "extraction/benchmark.py"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "4ef4f1760ff0",
+  "token_usage": {
+    "input_tokens": 228,
+    "cache_creation_tokens": 202272,
+    "cache_read_tokens": 14999706,
+    "output_tokens": 116060,
+    "api_call_count": 115
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-09-08T16:18:02.467113Z",
+    "agent_lines": 3,
+    "agent_removed": 5,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3,
+    "total_lines_changed": 8,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
