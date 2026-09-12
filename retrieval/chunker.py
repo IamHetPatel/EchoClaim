@@ -6,7 +6,7 @@ structure first and only fall back to token windows when a single clause exceeds
 token budget. Each chunk keeps the metadata that doubles as the citation source and the
 Qdrant filter keys (product_code, lang, ...).
 
-See echoclaim-spine/BUILD_PLAN.md section 3.1.
+See ../docs/HANDBOOK.md section 3.3 (chunking).
 """
 from __future__ import annotations
 

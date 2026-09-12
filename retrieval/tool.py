@@ -7,7 +7,7 @@ clause) so it renders straight into the agent's existing tool-results prompt blo
 and ``stub=True`` whenever the agent must NOT assert coverage (no confident match, or
 retrieval unavailable), matching how the prompt treats stubbed tool output.
 
-See echoclaim-spine/BUILD_PLAN.md sections 3.5 and 3.9.
+See ../docs/HANDBOOK.md section 3.7 (grounding and citations).
 """
 from __future__ import annotations
 

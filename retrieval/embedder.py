@@ -12,7 +12,7 @@ Two backends share one interface (``encode`` / ``encode_one``):
   tests, CI, and reproducible migration shadow-evals where downloading a multi-GB model
   is neither available nor wanted. Same dimension as the version it's bound to.
 
-See echoclaim-spine/BUILD_PLAN.md sections 3.3 and 3.4.
+See ../docs/HANDBOOK.md sections 3.4 (embeddings) and 6.4 (migration).
 """
 from __future__ import annotations
 

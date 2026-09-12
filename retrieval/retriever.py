@@ -4,7 +4,7 @@ This is what the ``coverage_lookup`` tool calls. It always returns citations so 
 agent answer can be checked for groundedness, and a ``low_confidence`` flag so the agent
 falls back to "a specialist will confirm" instead of inventing coverage.
 
-See echoclaim-spine/BUILD_PLAN.md sections 3.5 and 3.9.
+See ../docs/HANDBOOK.md sections 3.6 (two-stage retrieval) and 3.7 (grounding).
 """
 from __future__ import annotations
 

@@ -6,5 +6,5 @@ named-vector index -> rerank -> cited clauses.
 
 PR1 (this package so far): config, chunker, embedder, corpus loader, ingest, and the
 Qdrant index wrapper. Retriever, reranker, eval, the coverage_lookup tool, and the
-zero-downtime migration land in later PRs (see echoclaim-spine/BUILD_PLAN.md).
+zero-downtime migration lives in migrate.py (see ../docs/HANDBOOK.md §6.4).
 """

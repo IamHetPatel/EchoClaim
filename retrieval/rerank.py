@@ -11,7 +11,7 @@ Two backends share one interface (``rerank``):
 ``get_reranker`` picks the cross-encoder when sentence-transformers is importable and
 falls back to lexical otherwise, so retrieval works with zero heavy deps installed.
 
-See echoclaim-spine/BUILD_PLAN.md section 3.5.
+See ../docs/EVAL.md for the measured quality/latency tradeoff.
 """
 from __future__ import annotations
 

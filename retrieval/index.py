@@ -6,7 +6,7 @@ the first and flips the active pointer atomically. ``qdrant_client`` is imported
 so this module, and everything that only needs the chunker/embedder, imports without
 the dependency installed.
 
-See echoclaim-spine/BUILD_PLAN.md sections 3.2 and 3.4.
+See ../docs/HANDBOOK.md sections 3.5 (the index) and 6.4 (migration).
 """
 from __future__ import annotations
 

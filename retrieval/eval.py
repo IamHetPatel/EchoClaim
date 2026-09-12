@@ -11,7 +11,7 @@ eval gate compare against a baseline. Run::
     python -m retrieval.eval                 # table over the default golden set
     python -m retrieval.eval --k 3 --json
 
-See echoclaim-spine/BUILD_PLAN.md section 3.6.
+See ../docs/EVAL.md.
 """
 from __future__ import annotations
 
