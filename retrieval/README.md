@@ -36,21 +36,52 @@ makes the evaluation reproducible. The dense path is the real semantic matcher.
 Embeddings have two backends (`EMBED_BACKEND`): `sentence-transformers` (BGE-M3) and
 `hash` (deterministic, dependency-free) for offline tests and reproducible runs.
 
+## Reranking, and why `auto` is the fast one
+
+Recall is followed by a rerank pass (`RERANK_BACKEND`): `cross-encoder`
+(`bge-reranker-v2-m3`) or `lexical`.
+
+`auto` resolves to **lexical**, deliberately. The cross-encoder is a 568M-parameter model
+that scores every (query, candidate) pair. Measured on this corpus on CPU:
+
+| Stage | Time |
+|---|---|
+| BGE-M3 embed + Qdrant ANN | 456 ms |
+| `bge-reranker-v2-m3` rerank of 27 candidates | 28,270 ms |
+| lexical rerank | 8 ms |
+
+That is 98% of query latency for a large quality gain (nDCG@5 0.32 → 0.80). Worth it
+offline; impossible inside a phone call. An earlier version returned the cross-encoder
+whenever `sentence_transformers` merely happened to be importable, so installing the
+embedding dependency silently put a 28-second rerank in the live voice path. Evaluation
+and CI now opt in explicitly; the agent leaves it on `auto`.
+
+On a GPU the same model is roughly 90 ms per 100 pairs, so this is a CPU-serving
+constraint, not a property of the model.
+
 ## Usage
 
 ```bash
 # Ingest the corpus. --dry-run stops before Qdrant and writes a manifest that records
-# the embedding version.
+# the embedding version; --recreate drops the collection first for a hermetic run.
 python -m retrieval.ingest --dry-run
 EMBED_BACKEND=hash python -m retrieval.ingest --dry-run     # fully offline
+TORCH_DEVICE=cpu EMBED_BACKEND=sentence-transformers \
+  python -m retrieval.ingest --recreate                     # real vectors into Qdrant
 
 # Evaluate retrieval quality against the golden set
 python -m retrieval.eval                 # precision@k / recall@k / MRR / nDCG
 python -m retrieval.eval --k 3 --json
 
+# Compare recall backends on the same golden set
+TORCH_DEVICE=cpu python -m retrieval.compare_backends
+
 # The tool the agent calls
 python tools/coverage_lookup.py
 ```
+
+Point ids are derived from `(doc_id, clause_id)` via uuid5, so re-ingesting the same
+corpus updates points in place instead of inserting duplicates.
 
 ```python
 from retrieval.tool import coverage_lookup
@@ -76,7 +107,10 @@ All settings are environment-overridable. See [config.py](config.py). Common one
 | `RETRIEVAL_BACKEND` | `auto` | `auto` / `qdrant` / `memory-dense` / `lexical` |
 | `EMBED_BACKEND` | `sentence-transformers` | `sentence-transformers` / `hash` |
 | `TOP_K_RECALL` / `TOP_K_FINAL` | `50` / `6` | candidates before / after rerank |
+| `RERANK_BACKEND` | `auto` | `auto` / `cross-encoder` / `lexical` (see above) |
+| `TORCH_DEVICE` | unset | force `cpu` when the GPU cannot hold both models |
 | `CORPUS_DIR` | `data/policies` | corpus location |
+| `GOLDEN_SET_PATH` | `data/eval/golden_set.jsonl` | evaluation set |
 
 ## Tests
 
