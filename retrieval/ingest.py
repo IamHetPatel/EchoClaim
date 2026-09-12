@@ -58,7 +58,8 @@ def _write_manifest(manifest: dict) -> None:
     path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def ingest(corpus_dir: str | None = None, *, dry_run: bool = False, backend: str | None = None) -> dict:
+def ingest(corpus_dir: str | None = None, *, dry_run: bool = False, backend: str | None = None,
+           recreate: bool = False) -> dict:
     chunks = load_and_chunk(corpus_dir)
     versions = _target_versions()
 
@@ -87,6 +88,10 @@ def ingest(corpus_dir: str | None = None, *, dry_run: bool = False, backend: str
             from .index import QdrantIndex
 
             idx = QdrantIndex()
+            if recreate:
+                # CI wants a hermetic index: drop the collection so a stale run cannot
+                # leak points into this one.
+                idx.drop_collection()
             idx.ensure_collection(versions)
             idx.upsert(chunks, vectors_by_version)
             manifest["upserted"] = True
@@ -104,9 +109,10 @@ def main() -> None:
     ap.add_argument("--corpus-dir", default=None, help="override CORPUS_DIR")
     ap.add_argument("--dry-run", action="store_true", help="chunk + embed + manifest, no Qdrant")
     ap.add_argument("--backend", default=None, help="embed backend override: sentence-transformers | hash")
+    ap.add_argument("--recreate", action="store_true", help="drop the collection first (hermetic CI run)")
     args = ap.parse_args()
 
-    m = ingest(args.corpus_dir, dry_run=args.dry_run, backend=args.backend)
+    m = ingest(args.corpus_dir, dry_run=args.dry_run, backend=args.backend, recreate=args.recreate)
     print(json.dumps(m, indent=2, ensure_ascii=False))
     print(
         f"\n[ingest] {m['n_chunks']} chunks from {m['n_docs']} docs "
