@@ -27,7 +27,12 @@ class EmbeddingVersion:
 # existing one in place, since that would invalidate vectors already written under it.
 EMBEDDING_VERSIONS: dict[str, EmbeddingVersion] = {
     "emb_v1": EmbeddingVersion("emb_v1", "BAAI/bge-m3", 1024),
-    # "emb_v2": EmbeddingVersion("emb_v2", "<next-model>", <dim>),  # added in PR4
+    # emb_v2 exists so the migration path is exercised against a genuinely different
+    # model with a different dimension. bge-base-en-v1.5 is English-only, so on this
+    # German corpus it should *lose* the shadow eval -- which is the point: the
+    # non-inferiority gate has to be able to block a bad migration, not just wave one
+    # through. Replace with the real candidate when migrating for real.
+    "emb_v2": EmbeddingVersion("emb_v2", "BAAI/bge-base-en-v1.5", 768),
 }
 
 

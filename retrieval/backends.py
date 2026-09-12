@@ -33,13 +33,17 @@ class QdrantBackend:
     """Dense ANN recall from Qdrant. Probes connectivity on construction so an
     unreachable server raises here and the caller can fall back."""
 
-    def __init__(self, embedder=None):
+    def __init__(self, embedder=None, version: str | None = None):
         from .embedder import get_embedder
         from .index import QdrantIndex
 
         self.index = QdrantIndex()
         self.index.client.get_collections()  # raises if server is unreachable
-        self._version = self.index.get_active_version()
+        # ``version`` pins reads to a specific named vector. Reads normally follow the
+        # collection's active version, but the migration shadow-eval has to query a
+        # candidate version *while the old one is still serving* -- that is what makes
+        # the comparison meaningful and the cutover safe.
+        self._version = version or self.index.get_active_version()
         self.embedder = embedder or get_embedder(settings.version(self._version))
 
     def active_version(self) -> str:

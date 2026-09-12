@@ -47,16 +47,27 @@ class QdrantIndex:
             pass  # absent is the desired end state either way
 
     def ensure_collection(self, version_names: list[str]) -> None:
-        """Create the collection (if absent) with one named vector per version."""
+        """Create the collection (if absent) with a named vector slot per version.
+
+        Slots are created for *every registered* embedding version, not only the ones
+        being written now. Qdrant cannot add a named vector to a live collection --
+        ``update_collection`` takes a ``VectorParamsDiff``, which can change hnsw or
+        quantization settings but not introduce a new vector -- so a slot that does not
+        exist at creation cannot be added later without rebuilding the collection.
+
+        An empty slot costs nothing: points simply carry no vector under that name. This
+        is what makes the later migration a pointer flip instead of a rebuild.
+        """
         from qdrant_client import models
 
         existing = {c.name for c in self.client.get_collections().collections}
         if self.collection not in existing:
+            slots = sorted(set(version_names) | set(settings.versions))
             vectors_config = {
                 name: models.VectorParams(
                     size=settings.version(name).dim, distance=models.Distance.COSINE
                 )
-                for name in version_names
+                for name in slots
             }
             self.client.create_collection(self.collection, vectors_config=vectors_config)
             # Index the payload keys we filter on so filtering stays fast at scale.
@@ -65,35 +76,48 @@ class QdrantIndex:
                     self.collection, field_name=key,
                     field_schema=models.PayloadSchemaType.KEYWORD,
                 )
-            self._set_meta({"versions": sorted(version_names), "active": settings.active_version})
+            self._set_meta({"versions": sorted(version_names), "slots": slots,
+                            "active": settings.active_version})
         else:
             self.add_vector_version(version_names)
 
     def add_vector_version(self, version_names: list[str]) -> None:
-        """Add a new named vector to an existing collection (PR4, dual-write setup).
+        """Verify the named-vector slots exist. Qdrant cannot create them after the fact.
 
-        NOTE: adding a named vector in place requires a recent Qdrant. If the running
-        server is too old, create ``{collection}__v2``, backfill, then swap by alias.
+        Kept as a named step because it is phase 1 of the migration, but it is a check,
+        not a mutation: ``update_collection`` accepts only a ``VectorParamsDiff``
+        (hnsw / quantization / on_disk / memory), so there is no API that adds a vector
+        name to a live collection. If a slot is missing the collection has to be rebuilt
+        -- see ``retrieval.migrate`` for the alias-swap path that does it without taking
+        reads down.
+        """
+        info = self.client.get_collection(self.collection)
+        present = set(info.config.params.vectors or {})
+        missing = [v for v in version_names if v not in present]
+        if missing:
+            raise RuntimeError(
+                f"collection {self.collection!r} has no named-vector slot for "
+                f"{missing}; present: {sorted(present)}. Qdrant cannot add one in place. "
+                f"Rebuild with `python -m retrieval.migrate rebuild --to {missing[0]}`."
+            )
+
+    def aliases_of(self, collection: str | None = None) -> list[str]:
+        target = collection or self.collection
+        return [a.alias_name for a in self.client.get_collection_aliases(target).aliases]
+
+    def switch_alias(self, alias: str, to_collection: str) -> None:
+        """Atomically repoint an alias. This is the zero-downtime cutover primitive.
+
+        Qdrant applies the delete and create in one operation, so no read observes the
+        alias as missing.
         """
         from qdrant_client import models
 
-        meta = self._get_meta()
-        known = set(meta.get("versions", []))
-        new = [v for v in version_names if v not in known]
-        for name in new:
-            self.client.update_collection(
-                self.collection,
-                vectors_config={
-                    name: models.VectorParams(
-                        size=settings.version(name).dim, distance=models.Distance.COSINE
-                    )
-                },
-            )
-        if new:
-            meta["versions"] = sorted(known | set(new))
-            self._set_meta(meta)
-
-    # ---- writes --------------------------------------------------------------
+        self.client.update_collection_aliases(change_aliases_operations=[
+            models.DeleteAliasOperation(delete_alias=models.DeleteAlias(alias_name=alias)),
+            models.CreateAliasOperation(create_alias=models.CreateAlias(
+                collection_name=to_collection, alias_name=alias)),
+        ])
 
     def upsert(self, chunks: list[Chunk], vectors_by_version: dict[str, object]) -> None:
         """Upsert points carrying one or more named vectors.
