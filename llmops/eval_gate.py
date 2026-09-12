@@ -96,6 +96,10 @@ def run_eval(golden_path: str | None = None, *, sample: int | None = None,
     if skip_groundedness:
         skipped["groundedness"] = "explicitly skipped (--skip-groundedness)"
     else:
+        from .judge import family_conflict
+        conflict = family_conflict()
+        if conflict:
+            print(f"  ! {conflict}")
         try:
             from .groundedness import evaluate_groundedness
             g, _f, _rows = evaluate_groundedness(golden, sample=sample, retrievals=cache)
@@ -134,6 +138,8 @@ def provenance() -> dict:
     return {
         "judge_backend": _judge.backend_name(),
         "judge_model": os.getenv("JUDGE_MODEL", "<default>"),
+        "answer_backend": _judge.answer_backend_name(),
+        "judge_family_conflict": bool(_judge.family_conflict()),
         "embed_backend": settings.embed_backend,
         "rerank_backend": os.getenv("RERANK_BACKEND", "auto"),
         "retrieval_backend": os.getenv("RETRIEVAL_BACKEND", "auto"),

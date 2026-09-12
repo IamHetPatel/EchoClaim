@@ -25,7 +25,7 @@ import json
 import os
 from dataclasses import dataclass, asdict
 
-from .judge import JudgeUnavailable, complete, judge
+from .judge import JudgeUnavailable, answer_backend_name, complete, family_conflict, judge
 
 _ANSWER_SYSTEM = """You are a German motor-insurance claims assistant.
 Answer the caller's question using ONLY the numbered clauses provided.
@@ -44,9 +44,17 @@ class GroundednessRow:
 
 
 def _answer(question: str, citations: list[str]) -> str:
-    """Generate the answer under test, on the same backend and temperature as the judge."""
+    """Generate the answer under test.
+
+    Runs on ``ANSWER_BACKEND`` -- the system under test -- which is deliberately separate
+    from ``JUDGE_BACKEND``. A judge from the same model family as the generator inflates
+    the score; ``family_conflict()`` reports it when they collide.
+    """
     context = "\n".join(f"{i}. {c}" for i, c in enumerate(citations, start=1))
-    return complete(f"Klauseln:\n{context}\n\nFrage: {question}", system=_ANSWER_SYSTEM).strip()
+    return complete(f"Klauseln:\n{context}\n\nFrage: {question}",
+                    system=_ANSWER_SYSTEM,
+                    backend=answer_backend_name(),
+                    model=os.getenv("ANSWER_MODEL")).strip()
 
 
 def evaluate_groundedness(
@@ -99,6 +107,9 @@ def main() -> None:
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
+    warn = family_conflict()
+    if warn:
+        print(f"  ! {warn}")
     g, f, rows = evaluate_groundedness(sample=args.sample)
     if args.json:
         print(json.dumps({"groundedness": g, "faithfulness": f,

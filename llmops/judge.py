@@ -58,10 +58,55 @@ _GEMINI_MODELS = [
 
 
 def backend_name() -> str:
+    """Backend that *scores* the answer."""
     return os.getenv("JUDGE_BACKEND", "gemini")
 
 
-def _call_gemini(prompt: str, *, system: str | None = None) -> str:
+def answer_backend_name() -> str:
+    """Backend that *generates* the answer under test.
+
+    Defaults to the judge backend only for backwards compatibility. In a real evaluation
+    this should be whatever the live agent runs on, and it must differ in family from the
+    judge — see ``family_conflict``.
+    """
+    return os.getenv("ANSWER_BACKEND") or backend_name()
+
+
+# Which model family a backend belongs to. Judges from the same family as the generator
+# systematically over-reward it (self-enhancement / family bias), so the two must differ.
+_FAMILY = {"gemini": "google", "ollama": "local-oss"}
+
+
+def family_of(backend: str, model: str | None = None) -> str:
+    if backend == "ollama" and model:
+        # Ollama serves many families; name the model so e.g. gemma-on-Ollama is not
+        # mistaken for a different family than Gemini.
+        head = model.split(":", 1)[0].lower()
+        for fam, keys in {"google": ("gemma",), "meta": ("llama",), "qwen": ("qwen",),
+                          "mistral": ("mistral", "mixtral")}.items():
+            if any(k in head for k in keys):
+                return fam
+        return "local-oss"
+    return _FAMILY.get(backend, backend)
+
+
+def family_conflict() -> str | None:
+    """Return a warning when the judge shares a model family with the generator.
+
+    The bias is well documented: a judge scores its own family's style as higher quality,
+    so a same-family groundedness number is inflated by an unknown amount. This does not
+    raise -- a same-family run is still informative -- but it must never pass silently.
+    """
+    gen_b, judge_b = answer_backend_name(), backend_name()
+    gen_f = family_of(gen_b, os.getenv("ANSWER_MODEL"))
+    judge_f = family_of(judge_b, os.getenv("JUDGE_MODEL"))
+    if gen_f != judge_f:
+        return None
+    return (f"judge and generator share model family {judge_f!r} "
+            f"(generator={gen_b}, judge={judge_b}); groundedness is biased upward")
+
+
+def _call_gemini(prompt: str, *, system: str | None = None, model: str | None = None) -> str:
     if not os.environ.get("GOOGLE_API_KEY"):
         raise JudgeUnavailable("GOOGLE_API_KEY is not set")
     try:
@@ -71,7 +116,7 @@ def _call_gemini(prompt: str, *, system: str | None = None) -> str:
         raise JudgeUnavailable(f"google-genai not installed: {e}") from e
 
     client = genai.Client()
-    models = [m for m in [os.environ.get("JUDGE_MODEL"), *_GEMINI_MODELS] if m]
+    models = [m for m in [model, os.environ.get("JUDGE_MODEL"), *_GEMINI_MODELS] if m]
     last: Exception | None = None
     for model in models:
         try:
@@ -92,13 +137,13 @@ def _call_gemini(prompt: str, *, system: str | None = None) -> str:
     raise JudgeUnavailable(f"all Gemini judge models failed; last error: {last}")
 
 
-def _call_ollama(prompt: str) -> str:
+def _call_ollama(prompt: str, *, model: str | None = None) -> str:
     try:
         import requests
     except Exception as e:  # pragma: no cover - import guard
         raise JudgeUnavailable(f"requests not installed: {e}") from e
 
-    model = os.getenv("JUDGE_MODEL", "qwen2.5:7b-instruct")
+    model = model or os.getenv("JUDGE_MODEL", "qwen2.5:7b-instruct")
     try:
         r = requests.post(
             os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate"),
@@ -112,19 +157,20 @@ def _call_ollama(prompt: str) -> str:
         raise JudgeUnavailable(f"ollama backend unreachable: {e}") from e
 
 
-def complete(prompt: str, *, system: str | None = None) -> str:
+def complete(prompt: str, *, system: str | None = None, backend: str | None = None,
+             model: str | None = None) -> str:
     """One-shot completion on the configured backend, temperature 0.
 
     Shared by the judge and by the answer-under-test generator in
     ``llmops.groundedness`` so both halves of the groundedness measurement run on the
     same backend selection and the same determinism guarantee.
     """
-    backend = backend_name()
+    backend = backend or backend_name()
     if backend == "gemini":
-        return _call_gemini(prompt, system=system)
+        return _call_gemini(prompt, system=system, model=model)
     if backend == "ollama":
-        return _call_ollama(prompt if system is None else f"{system}\n\n{prompt}")
-    raise JudgeUnavailable(f"unknown judge backend '{backend}'")
+        return _call_ollama(prompt if system is None else f"{system}\n\n{prompt}", model=model)
+    raise JudgeUnavailable(f"unknown backend '{backend}'")
 
 
 def _call_backend(prompt: str) -> str:

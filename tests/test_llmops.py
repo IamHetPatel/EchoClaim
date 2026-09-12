@@ -165,3 +165,64 @@ def test_a_missing_metric_cannot_mask_a_regression():
     assert eval_gate.compare({}, {"groundedness": 0.9}) == []  # absent => not compared
     metrics, skipped = eval_gate.run_eval(skip_groundedness=True, skip_extraction=True)
     assert "groundedness" in skipped  # ...but it *is* reported, so --strict can fail it
+
+
+# ---- judge / generator independence ---------------------------------------------
+
+def test_judge_and_generator_backends_are_separable(monkeypatch):
+    """The generator must not be forced onto the judge's backend.
+
+    They were the same call for a while, which made same-family bias structural rather
+    than a configuration mistake.
+    """
+    from llmops import judge as j
+
+    monkeypatch.setenv("ANSWER_BACKEND", "gemini")
+    monkeypatch.setenv("JUDGE_BACKEND", "ollama")
+    assert j.answer_backend_name() == "gemini"
+    assert j.backend_name() == "ollama"
+
+
+def test_answer_backend_falls_back_to_judge_backend(monkeypatch):
+    from llmops import judge as j
+
+    monkeypatch.delenv("ANSWER_BACKEND", raising=False)
+    monkeypatch.setenv("JUDGE_BACKEND", "ollama")
+    assert j.answer_backend_name() == "ollama"
+
+
+def test_same_family_judge_is_flagged(monkeypatch):
+    from llmops import judge as j
+
+    monkeypatch.setenv("ANSWER_BACKEND", "gemini")
+    monkeypatch.setenv("JUDGE_BACKEND", "gemini")
+    assert "share model family" in (j.family_conflict() or "")
+
+
+def test_different_family_judge_is_not_flagged(monkeypatch):
+    from llmops import judge as j
+
+    monkeypatch.setenv("ANSWER_BACKEND", "gemini")
+    monkeypatch.setenv("JUDGE_BACKEND", "ollama")
+    monkeypatch.setenv("JUDGE_MODEL", "llama3.2:latest")
+    assert j.family_conflict() is None
+
+
+def test_gemma_on_ollama_still_conflicts_with_gemini(monkeypatch):
+    """A different *backend* is not automatically a different *family*.
+
+    Gemma served through Ollama is still a Google model, so judging Gemini output with it
+    carries the same bias. Checking the backend name alone would miss this.
+    """
+    from llmops import judge as j
+
+    monkeypatch.setenv("ANSWER_BACKEND", "gemini")
+    monkeypatch.setenv("JUDGE_BACKEND", "ollama")
+    monkeypatch.setenv("JUDGE_MODEL", "gemma3:4b")
+    assert "share model family" in (j.family_conflict() or "")
+
+
+def test_provenance_records_the_conflict(monkeypatch):
+    monkeypatch.setenv("ANSWER_BACKEND", "gemini")
+    monkeypatch.setenv("JUDGE_BACKEND", "gemini")
+    assert eval_gate.provenance()["judge_family_conflict"] is True
