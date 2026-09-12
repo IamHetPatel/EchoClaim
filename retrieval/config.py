@@ -49,6 +49,12 @@ class Settings:
 
     rerank_model_id: str = os.getenv("RERANK_MODEL_ID", "BAAI/bge-reranker-v2-m3")
 
+    # Torch device for the embedder and the cross-encoder. Empty = let
+    # sentence-transformers pick. Set to "cpu" on machines where loading both
+    # models at once exhausts the GPU (Apple MPS has a hard allocation ceiling),
+    # and on CI runners, which are CPU-only anyway.
+    torch_device: str | None = os.getenv("TORCH_DEVICE") or None
+
     # Structure-aware chunking budget (see chunker.py).
     max_chunk_tokens: int = int(os.getenv("MAX_CHUNK_TOKENS", "400"))
     chunk_overlap_tokens: int = int(os.getenv("CHUNK_OVERLAP_TOKENS", "64"))
