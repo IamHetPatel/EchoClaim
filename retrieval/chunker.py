@@ -12,7 +12,16 @@ from __future__ import annotations
 
 import re
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
+
+# Fixed namespace so ids are reproducible across machines and CI runs.
+_POINT_NS = uuid.UUID("6f9619ff-8b86-d011-b42d-00c04fc964ff")
+
+
+def stable_point_id(doc_id: str, clause_id: str) -> str:
+    """Deterministic Qdrant point id for a clause. Same clause -> same id, always."""
+    return str(uuid.uuid5(_POINT_NS, f"{doc_id}\x00{clause_id}"))
 
 
 @dataclass
@@ -25,7 +34,15 @@ class Chunk:
     product_code: str | None    # tariff/product filter key, e.g. "KK-300"
     lang: str = "de"
     token_count: int = 0
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = ""
+
+    def __post_init__(self) -> None:
+        # Qdrant point ids must be stable across ingests, or re-ingesting the same
+        # corpus inserts duplicate points instead of updating them (and the migration
+        # backfill silently doubles the collection). Derive the id from the citation
+        # key so the same clause always lands on the same point.
+        if not self.id:
+            self.id = stable_point_id(self.doc_id, self.clause_id)
 
     def payload(self) -> dict:
         """Qdrant payload. Also the citation source and the filter keys."""
