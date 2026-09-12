@@ -41,12 +41,11 @@ EVAL_DATA: list[dict] = [
             "came, the case number is 2026-04-25-7711. I might have whiplash."
         ),
         "gold": {
-            "accident_location": "A4 near Köln-Ost",
-            "accident_time": "8 in the morning",
-            "weather_conditions": "pouring rain",
+            "incident_location": "A4 near Köln-Ost",
+            "incident_datetime": "8 in the morning",
             "other_party_plate": "K-AB 1234",
             "police_case_number": "2026-04-25-7711",
-            "injury_description": "whiplash",
+            "injuries_or_symptoms": "whiplash",
         },
     },
     {
@@ -70,7 +69,6 @@ EVAL_DATA: list[dict] = [
             "fault_admission": "his fault",
             "known_to_other_party": "brother-in-law",
             "other_party_insurer": "HUK-Coburg",
-            "other_party_name": "Klaus",
         },
     },
 ]
