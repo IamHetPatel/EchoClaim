@@ -1,7 +1,7 @@
 # Dashboard specification
 
-The dashboard contract. The single-file `index.html` in this folder implements it. This
-spec also serves as the regeneration prompt for rebuilding the UI from scratch.
+The dashboard contract: the event stream the bridge emits and what the UI does with it.
+The single-file `index.html` in this folder implements it.
 
 > Build a React dashboard for a real-time German motor-insurance FNOL (first-notice-of-loss)
 > intake console, named **VORSICHT Claims · Live FNOL Console**.

@@ -1,42 +1,43 @@
 flowchart TB
     caller([Caller on phone])
 
-    subgraph voice["Voice loop (existing)"]
+    subgraph voice["Voice loop"]
         stt[Gradium STT]
         tts[Gradium TTS]
     end
 
-    subgraph brain["Agent core (existing, extended)"]
+    subgraph brain["Agent core"]
         gemini[GeminiBrain<br/>Gemini 2.5 Flash<br/>+ fallback chain]
-        ctx[Known-Context CRM<br/>injection]
+        ctx[Known-context CRM<br/>injection]
     end
 
     subgraph tools["Tools (function-calling)"]
         tavily[Tavily real-time lookup]
-        coverage[[coverage_lookup tool<br/>NEW]]
+        coverage[[coverage_lookup]]
     end
 
-    subgraph retrieval["Retrieval subsystem (NEW)"]
-        corpus[(Policy + claims +<br/>regulation corpus)]
+    subgraph retrieval["Retrieval"]
+        corpus[(Policy + regulation<br/>corpus)]
         chunker[Structure-aware chunker]
         embedder[Embedder<br/>BGE-M3 multilingual]
-        qdrant[(Qdrant<br/>named vectors:<br/>v1 + v2 blue/green)]
+        qdrant[(Qdrant<br/>named vectors emb_v1 / emb_v2)]
         retr[Retriever]
-        rerank[Cross-encoder rerank<br/>bge-reranker-v2-m3]
-        migrate{{Migration job<br/>dual-write + backfill<br/>+ shadow-eval + swap}}
+        noop[Recall order<br/>no rerank — live path]
+        migrate{{Migration<br/>introduce, dual-write, backfill,<br/>shadow-eval, cutover, rollback}}
     end
 
-    subgraph extract["Extraction (existing, extended)"]
-        gliner[GLiNER2 extractor<br/>quantized for serving]
+    subgraph extract["Extraction"]
+        gliner[GLiNER2 extractor]
         pillars[15 claim pillars<br/>+ 5 fraud signals]
     end
 
-    subgraph llmops["LLMOps (NEW)"]
-        registry[Prompt registry<br/>versioned + hashed]
-        logmw[Logging middleware<br/>PII-redacted traces]
+    subgraph llmops["LLMOps"]
+        registry[Prompt registry<br/>versioned + content-hashed]
+        logmw[Trace logging<br/>PII-redacted]
         judge[LLM-as-judge<br/>groundedness]
-        drift[Drift + hallucination<br/>monitor]
+        drift[Drift monitor<br/>groundedness + PSI]
         gate[CI eval gate<br/>blocks regressions]
+        rerank[Cross-encoder rerank<br/>bge-reranker-v2-m3<br/>evaluation only: ~2.8 s/query]
     end
 
     bridge[FastAPI WS bridge]
@@ -50,12 +51,14 @@ flowchart TB
     coverage --> retr
     corpus --> chunker --> embedder --> qdrant
     retr --> qdrant
-    retr --> rerank --> coverage
-    migrate -. reindex .-> qdrant
+    retr --> noop --> coverage
+    migrate -. rewrites named vectors .-> qdrant
     registry --> gemini
     gemini --> logmw
     logmw --> judge --> drift
     retr --> logmw
     gemini -. transcript .-> gliner --> pillars --> bridge --> dash
     pillars --> logmw
+    retr -. scored offline .-> rerank --> gate
+    judge --> gate
     gate -. gates merges .-> registry

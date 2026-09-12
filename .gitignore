@@ -47,11 +47,14 @@ transcripts/
 *.log
 !transcripts/.gitkeep
 
-# Entire local cache
 .entire/
 
 # Retrieval caches + ingest artifacts (embeddings, manifest)
 .cache/
 
-# Cowork / Claude Code session metadata
+# Editor / agent session metadata
 .claude/
+
+# Stray screenshots / pasted images
+WhatsApp Image*
+*.jpeg

@@ -5,7 +5,7 @@ runs end to end on CPU without them.
 
 | Script | Job |
 |---|---|
-| `embed_corpus.sbatch` | Embed the corpus on a GPU. Relevant to the migration backfill, which is the one genuinely compute-heavy step — see [../docs/BUILD_PLAN.md](../docs/BUILD_PLAN.md) §6. |
+| `embed_corpus.sbatch` | Embed the corpus on a GPU. Relevant to the migration backfill, the one genuinely compute-heavy step — see [../retrieval/README.md](../retrieval/README.md). |
 | `finetune_quantize_gliner.sbatch` | Fine-tune and quantize the GLiNER2 extractor (`extraction/finetune_gliner.py`). |
 
 Reranking is the other candidate: `bge-reranker-v2-m3` costs ~2.8 s/query on CPU against

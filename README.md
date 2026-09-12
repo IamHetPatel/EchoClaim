@@ -130,7 +130,3 @@ and rollback restores the correct answer.
 Not yet done: drift monitoring is implemented and unit-tested but has not run over a
 production trace volume, and `trace()` is not yet wrapped around the live model call, so
 traces do not accumulate. Judge calibration against human labels has not been done.
-
-## License
-
-See [LICENSE](LICENSE).

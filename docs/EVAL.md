@@ -52,8 +52,8 @@ result at this corpus size and a useful check that the index is wired correctly.
 
 ### The latency finding
 
-Reranking is over 99% of query time. Measured warm — an earlier figure of ~28 s was a
-cold process that folded model load and torch warmup into the first call:
+Reranking is over 99% of query time. Measure warm: cold, the model load and torch warmup
+land in the first call and inflate it to roughly 5 s.
 
 | Stage | Time (CPU, 27 candidates) |
 |---|---|

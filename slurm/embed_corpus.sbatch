@@ -9,7 +9,6 @@
 
 # Batch-embed the corpus (or the emb_v2 backfill) on a ZIH GPU.
 # Makes the migration demo realistic at corpus scale instead of toy scale.
-# See BUILD_PLAN.md section 6.
 
 set -euo pipefail
 

@@ -660,9 +660,9 @@ a failure means something actually broke.
 
 ### 6.2 Why the cross-encoder is not in the live path
 
-It is over 99% of query latency — 2,776 ms steady state against ~16 ms for recall. (An
-earlier draft of these docs said 28 s; that was a cold process, folding model load and
-torch warmup into one measured call. Measure warm.) A caller will not wait either way.
+It is over 99% of query latency — 2,776 ms steady state against ~16 ms for recall. Those
+are warm numbers: measured cold, model load and torch warmup land in the first call and
+inflate it to roughly 5 s, so warm up before timing. A caller will not wait either way.
 
 So `RERANK_BACKEND=auto` resolves to `NoOpReranker` and the cross-encoder is opt-in. This
 was a real bug: an earlier version returned the cross-encoder whenever
@@ -779,6 +779,7 @@ Stated plainly, because knowing the edges is part of understanding the system.
 
 | Document | Covers |
 |---|---|
+| [architecture.mermaid](architecture.mermaid) | System diagram: live path, retrieval, LLMOps |
 | [EVAL.md](EVAL.md) | Evaluation methodology and every measured number |
 | [COMPONENTS.md](COMPONENTS.md) | Module-by-module contracts |
 | [SECURITY.md](SECURITY.md) | GDPR posture, the redaction table |

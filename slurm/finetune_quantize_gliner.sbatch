@@ -9,7 +9,6 @@
 
 # Re-fine-tune the GLiNER2 extractor on more claim data, then export an int8/ONNX
 # serving artifact. A full fine-tune won't fit free Colab; an A100/H100 here is the
-# legitimate reason to use the cluster. See BUILD_PLAN.md sections 3.8 and 6.
 
 set -euo pipefail
 
