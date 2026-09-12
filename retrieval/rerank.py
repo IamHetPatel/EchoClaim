@@ -110,24 +110,57 @@ class LexicalReranker:
         return out
 
 
+class NoOpReranker:
+    """Keep the recall backend's ordering; just truncate to top_k.
+
+    Not a placeholder -- measured to be the best fast option here. Dense recall with
+    BGE-M3 already orders well, and the lexical reranker *discards* that ordering in
+    favour of keyword overlap, which is precisely what fails on the paraphrased queries
+    the golden set is built from.
+    """
+
+    def rerank(self, query: str, hits: list[Hit], top_k: int | None = None) -> list[Hit]:
+        return hits[: top_k or settings.top_k_final]
+
+
 def get_reranker(backend: str | None = None):
-    """Return a reranker. ``RERANK_BACKEND`` env: auto | cross-encoder | lexical.
+    """Return a reranker. ``RERANK_BACKEND``: auto | none | cross-encoder | lexical.
 
-    ``auto`` resolves to the **lexical** reranker, deliberately.
+    ``auto`` resolves to ``NoOpReranker``, on measurement rather than taste. Over the
+    32-query golden set with dense recall, on CPU:
 
-    bge-reranker-v2-m3 is a 568M-parameter cross-encoder that scores every
-    (query, candidate) pair. Measured on this corpus on CPU, reranking 27 candidates
-    takes ~28 s, against ~456 ms for BGE-M3 recall and ~8 ms for lexical reranking — so
-    it is ~98% of query latency. That is fine offline, and it is worth a lot of quality
-    (nDCG@5 0.32 -> 0.80), but it cannot sit inside a real-time phone call.
+    ========================  ======  =======  ==========
+    rerank                      MRR   nDCG@5    ms/query
+    ========================  ======  =======  ==========
+    none (recall order)       0.6953   0.7145         0.2
+    lexical                   0.6120   0.6426         0.5
+    TinyBERT-L-2 (4M, EN)     0.3031   0.3167        22.7
+    MiniLM-L-6 (22M, EN)      0.3328   0.3436       221.1
+    bge-reranker-v2-m3        0.8047   0.7984      2776.4
+    ========================  ======  =======  ==========
 
-    So the cross-encoder is opt-in rather than automatic: an earlier version of this
-    function returned it whenever ``sentence_transformers`` merely happened to be
-    importable, which meant installing the embedding dependency silently put a
-    ~28 s rerank in the live voice path. The eval and CI set ``RERANK_BACKEND=cross-encoder``
-    explicitly; the live agent leaves it on ``auto`` and stays fast.
+    Three things follow.
+
+    **Lexical reranking is worse than none.** It replaces the dense model's ordering with
+    keyword overlap, which is exactly what loses on paraphrased queries. ``auto`` used to
+    return it; that cost quality for no benefit.
+
+    **English-only cross-encoders are not a shortcut.** The small ms-marco models are
+    fast and roughly halve MRR on this German corpus, landing below no reranking at all.
+    Reranker size was never the constraint; language coverage is.
+
+    **The multilingual cross-encoder is worth a lot and costs too much.** +0.11 MRR over
+    recall order, at ~2.8 s per query steady-state against ~16 ms for recall, so over 99%
+    of query latency -- and ~5.2 s on the first call, before torch warms up. Fine
+    offline, impossible inside a phone call. It is therefore opt-in: an earlier version
+    returned it whenever ``sentence_transformers`` merely happened to be importable, so
+    installing the embedding dependency silently put a multi-second rerank into the live
+    voice path. Eval and CI set ``cross-encoder`` explicitly; the agent leaves it on
+    ``auto``.
     """
     backend = backend or os.getenv("RERANK_BACKEND", "auto")
     if backend == "cross-encoder":
         return CrossEncoderReranker()
-    return LexicalReranker()
+    if backend == "lexical":
+        return LexicalReranker()
+    return NoOpReranker()
