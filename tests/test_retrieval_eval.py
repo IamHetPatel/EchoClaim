@@ -60,13 +60,23 @@ def test_golden_set_loads_and_matches_corpus():
 
 
 def test_eval_quality_on_golden_set():
+    """A floor for the *lexical* backend, which is the only one that runs offline.
+
+    The golden set is deliberately adversarial — most queries use caller wording rather
+    than clause wording, and the corpus carries near-miss distractors — so BM25 scores
+    around MRR 0.31 on it, not the 1.0 the previous one-query-per-clause set produced.
+    A saturated metric cannot detect a regression, so the low number is the point.
+
+    These thresholds only catch a hard break (a broken tokenizer, an empty index). The
+    real quality bar is the dense stack, enforced by the CI eval gate against a committed
+    baseline; it needs a model download and so cannot live in the offline suite.
+    """
     golden = load_golden(str(REPO / "data" / "eval" / "golden_set.jsonl"))
     report = evaluate(golden, retriever=_lexical_retriever(), k=5)
     assert report.n == len(golden)
-    # Generous thresholds (actual is 1.0) so the guard survives small corpus edits.
-    assert report.metrics["mrr"] >= 0.8
-    assert report.metrics["recall@5"] >= 0.9
-    assert report.metrics["ndcg@5"] >= 0.8
+    assert report.metrics["mrr"] >= 0.25
+    assert report.metrics["recall@5"] >= 0.30
+    assert report.metrics["ndcg@5"] >= 0.25
 
 
 def test_eval_is_reproducible():
