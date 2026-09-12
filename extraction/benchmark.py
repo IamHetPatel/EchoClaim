@@ -74,8 +74,13 @@ EVAL_DATA: list[dict] = [
 ]
 
 
-def _f1(pred: dict, gold: dict) -> float:
-    """Loose label-level F1 — credit if a gold label is present in pred."""
+def label_f1(pred: dict, gold: dict) -> float:
+    """Loose label-level F1 — credit if a gold label is present in pred.
+
+    Public because the CI gate scores the live extractor with it
+    (``llmops.extraction_eval``); the number the gate blocks on must be the same number
+    this benchmark reports.
+    """
     if not gold:
         return 1.0
     tp = sum(1 for k in gold if k in pred)
@@ -95,7 +100,7 @@ def _bench_gliner_with(svc: ExtractionService, label: str) -> dict:
         out = svc.extract(ex["text"])
         latencies.append((time.perf_counter() - t0) * 1000)
         merged = {**out["pillars"], **out["fraud"]}
-        f1s.append(_f1({k: v["text"] for k, v in merged.items()}, ex["gold"]))
+        f1s.append(label_f1({k: v["text"] for k, v in merged.items()}, ex["gold"]))
     return {
         "name": label,
         "latency_ms": round(mean(latencies), 1),
@@ -182,7 +187,7 @@ def bench_gemini() -> dict | None:
                     pred = json.loads(resp.text)
                 except Exception:
                     pred = {}
-                f1s.append(_f1(pred, ex["gold"]))
+                f1s.append(label_f1(pred, ex["gold"]))
         except Exception as e:
             short = str(e).split("\n", 1)[0][:80]
             print(f"  [bench-gemini] {model} failed: {short} — trying next model", flush=True)
@@ -219,3 +224,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# Back-compat alias for the pre-rename private name.
+_f1 = label_f1

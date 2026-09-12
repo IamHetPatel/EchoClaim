@@ -22,7 +22,7 @@ class ExtractionUnavailable(RuntimeError):
 def extraction_f1() -> float:
     """Mean label-level F1 of the live extractor over the benchmark eval set."""
     try:
-        from extraction.benchmark import EVAL_DATA, _f1
+        from extraction.benchmark import EVAL_DATA, label_f1
         from extraction.gliner2_service import ExtractionService
     except Exception as e:
         raise ExtractionUnavailable(f"cannot import extraction stack: {e}") from e
@@ -36,7 +36,7 @@ def extraction_f1() -> float:
     for ex in EVAL_DATA:
         out = svc.extract(ex["text"])
         merged = {**out["pillars"], **out["fraud"]}
-        scores.append(_f1({k: v["text"] for k, v in merged.items()}, ex["gold"]))
+        scores.append(label_f1({k: v["text"] for k, v in merged.items()}, ex["gold"]))
     return round(sum(scores) / (len(scores) or 1), 4)
 
 
