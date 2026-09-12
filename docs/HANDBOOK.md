@@ -205,10 +205,12 @@ The trade, measured on this project:
 | | MRR | nDCG@5 | time per query (CPU) |
 |---|---|---|---|
 | BM25 keyword only | 0.314 | 0.323 | ~0 ms |
-| BGE-M3 recall + cross-encoder rerank | 0.805 | 0.798 | ~28,700 ms |
+| BGE-M3 recall, no rerank | 0.695 | 0.715 | ~16 ms |
+| BGE-M3 recall + cross-encoder rerank | 0.805 | 0.798 | ~2,790 ms |
 
-Reranking more than doubles quality — and costs 28 seconds on CPU. That is the single
-most important measurement in this project, and [§6.2](#62-why-the-cross-encoder-is-not-in-the-live-path)
+Reranking adds a further +0.11 MRR on top of dense recall — and costs about 2.8 seconds
+per query on CPU, which is over 99% of the total. That is the single most important
+measurement in this project, and [§6.2](#62-why-the-cross-encoder-is-not-in-the-live-path)
 explains what we did about it.
 
 → `retrieval/backends.py`, `retrieval/rerank.py`, `retrieval/retriever.py`
@@ -658,15 +660,35 @@ a failure means something actually broke.
 
 ### 6.2 Why the cross-encoder is not in the live path
 
-It is 98% of query latency (28,270 ms of 28,726 ms on CPU). A caller will not wait.
+It is over 99% of query latency — 2,776 ms steady state against ~16 ms for recall. (An
+earlier draft of these docs said 28 s; that was a cold process, folding model load and
+torch warmup into one measured call. Measure warm.) A caller will not wait either way.
 
-`RERANK_BACKEND=auto` therefore resolves to the *lexical* reranker, and the cross-encoder
-is opt-in. This was a real bug: an earlier version returned the cross-encoder whenever
+So `RERANK_BACKEND=auto` resolves to `NoOpReranker` and the cross-encoder is opt-in. This
+was a real bug: an earlier version returned the cross-encoder whenever
 `sentence_transformers` happened to be importable, so merely installing the embedding
-dependency would have put a 28-second rerank into live phone calls.
+dependency would have put a multi-second rerank into live phone calls.
 
-Serving it properly needs a GPU (~90 ms/100 pairs), a much smaller reranker, or late
-interaction — see [§7](#7-what-is-not-done).
+Two further findings, both from measuring rather than guessing:
+
+| rerank | MRR | nDCG@5 | ms/query |
+|---|---|---|---|
+| none (recall order) | 0.6953 | 0.7145 | 0.2 |
+| lexical | 0.6120 | 0.6426 | 0.5 |
+| TinyBERT-L-2 (4M, EN) | 0.3031 | 0.3167 | 22.7 |
+| MiniLM-L-6 (22M, EN) | 0.3328 | 0.3436 | 221.1 |
+| bge-reranker-v2-m3 (568M, multilingual) | 0.8047 | 0.7984 | 2776.4 |
+
+**Lexical reranking is worse than doing nothing.** It throws away the dense model's
+ordering and substitutes keyword overlap — precisely what fails on paraphrased queries.
+`auto` returned it until this was measured.
+
+**A tiny reranker is not the answer.** The small English ms-marco cross-encoders are fast
+and roughly *halve* MRR on German, scoring below no reranking at all. Reranker size was
+never the constraint; multilingual coverage is.
+
+Serving reranking properly needs a GPU (~90 ms/100 pairs) or late interaction — see
+[§7](#7-what-is-not-done).
 
 ### 6.3 Why GLiNER2 despite losing on F1
 
@@ -683,8 +705,24 @@ Named vectors let both live side by side on the same point. The safe sequence be
 introduce `emb_v2` → write both on ingest → backfill the old corpus → evaluate v2 against
 v1 on the golden set → flip which name reads serve → keep v1 for instant rollback.
 
-The *foundation* for that is built and the config carries a dual-write setting. **The
-sequence itself is not implemented** — see [§7](#7-what-is-not-done).
+All six phases are implemented in `retrieval/migrate.py` and have been rehearsed end to
+end against a live Qdrant. The rehearsal deliberately migrates *to a worse model*
+(`bge-base-en-v1.5`, English-only, on a German corpus) because the interesting question is
+not whether a good migration succeeds but whether a bad one is stopped:
+
+```
+shadow-eval   emb_v1 ndcg@5 0.7145   emb_v2 ndcg@5 0.2322   delta -0.4823  -> FAIL, exit 1
+cutover       (blocked: shadow-eval gates it in the pipeline)
+cutover       --force            -> reads serve emb_v2, return the WRONG clause
+rollback --to emb_v1             -> reads serve emb_v1, correct clause restored
+```
+
+One caveat worth knowing, because it constrains the design: **Qdrant cannot add a named
+vector to a live collection.** `update_collection` takes a `VectorParamsDiff`, which
+changes hnsw or quantization settings but cannot introduce a new vector name. So slots for
+every registered version are created up front (an empty slot costs nothing), and
+`retrieval/migrate.py` carries an alias-swap path for the case where you did not plan
+ahead.
 
 ### 6.5 Judge caveats that are not yet handled
 
@@ -718,7 +756,6 @@ Stated plainly, because knowing the edges is part of understanding the system.
 
 | Gap | State |
 |---|---|
-| **Zero-downtime embedding migration** | Not implemented. Named vectors and a dual-write config exist; the six-phase sequence does not. This was the build plan's "centerpiece" (PR4). |
 | **Drift monitor at volume** | Implemented and unit-tested, never run over production traces. Needs `2 × window` rows. |
 | **Trace logging in the live turn** | `trace()` exists and is tested, but is not yet wrapped around the live Gemini call, so no real traces accumulate. |
 | **Juror bot** | 259 lines, never executed. One run produces `juror_results.csv` and makes the claim real. |
@@ -731,10 +768,10 @@ Stated plainly, because knowing the edges is part of understanding the system.
 - **Late interaction (ColBERT-style) reranking.** Qdrant supports multivectors natively
   with a `MAX_SIM` comparator, and document token embeddings are precomputed — roughly
   5–50 ms per query against the cross-encoder's 50–500 ms, at most of the quality. This is
-  the natural fix for §6.2, and it fits the existing named-vector design.
-- **A tiny CPU reranker.** `ms-marco-TinyBERT-L-2` is ~4M parameters against
-  bge-reranker-v2-m3's 568M — plausibly fast enough to keep reranking in the live path.
-- **A different-family judge**, to remove the bias in §6.5.
+  the natural fix for §6.2, and it fits the existing named-vector design. It is now the
+  *only* promising option left, since the tiny-reranker route was tried and failed.
+- **A multilingual small reranker.** The failure above was language coverage, not size, so
+  a small *multilingual* cross-encoder is the shape worth looking for.
 
 ---
 

@@ -52,13 +52,16 @@ result at this corpus size and a useful check that the index is wired correctly.
 
 ### The latency finding
 
-Reranking is 98% of query time. On CPU, for one query over 27 candidates:
+Reranking is over 99% of query time. Measured warm — an earlier figure of ~28 s was a
+cold process that folded model load and torch warmup into the first call:
 
-| Stage | Time |
+| Stage | Time (CPU, 27 candidates) |
 |---|---|
-| BGE-M3 embed + Qdrant ANN | 456 ms |
-| bge-reranker-v2-m3 rerank | 28,270 ms |
-| lexical rerank | 8 ms |
+| BGE-M3 embed + Qdrant ANN (warm) | 16 ms |
+| lexical rerank | 0.5 ms |
+| bge-reranker-v2-m3 rerank, steady state | 2,776 ms |
+| bge-reranker-v2-m3 first call (torch warmup) | 5,182 ms |
+| bge-reranker-v2-m3 model load, one-off | 3,146 ms |
 
 bge-reranker-v2-m3 is a 568M-parameter cross-encoder scoring every (query, candidate)
 pair. It buys a large quality gain — nDCG 0.32 → 0.80 — and it cannot go anywhere near a

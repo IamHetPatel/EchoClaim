@@ -59,8 +59,9 @@ coverage", not as "answer anyway".
 
 Recall is pluggable (`RETRIEVAL_BACKEND`): `qdrant` (dense ANN over BGE-M3 named vectors),
 `memory-dense` (exact cosine, no server), `lexical` (BM25, no model). Rerank is pluggable
-(`RERANK_BACKEND`): `cross-encoder` or `lexical`. `auto` resolves to lexical because the
-cross-encoder costs ~28 s/query on CPU — see [EVAL.md](EVAL.md).
+(`RERANK_BACKEND`): `cross-encoder` or `lexical`. `auto` resolves to `NoOpReranker` (keep recall order):
+the cross-encoder costs ~2.8 s/query on CPU, and lexical reranking scores *below* no
+reranking at all — see [EVAL.md](EVAL.md).
 
 `retrieval.chunker.Chunk.id` is a uuid5 over `(doc_id, clause_id)`, so ingest is
 idempotent: re-running updates points in place rather than inserting duplicates.

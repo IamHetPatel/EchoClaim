@@ -121,11 +121,15 @@ named-vector index, query plus rerank, the cited `coverage_lookup` tool, ranking
 evaluation), and the LLMOps layer (prompt registry, LLM-judge groundedness, the CI eval
 gate, PII-redacted trace logging, drift monitoring).
 
-Not yet done: zero-downtime embedding-model migration. The index already stores vectors
-under named versions so two embedding models can coexist, which is what the migration
-builds on, but the introduce / dual-write / backfill / shadow-eval / cutover / rollback
-sequence is not implemented or rehearsed. Drift monitoring is implemented and unit-tested
-but has not run over a production trace volume.
+Zero-downtime embedding migration is implemented (`retrieval/migrate.py`) and has been
+rehearsed end to end against a live Qdrant: introduce, dual-write, backfill, shadow-eval,
+cutover, rollback. The rehearsal migrates deliberately to a worse model so the
+non-inferiority gate has something to catch — it blocks the cutover (nDCG 0.71 → 0.23),
+and rollback restores the correct answer.
+
+Not yet done: drift monitoring is implemented and unit-tested but has not run over a
+production trace volume, and `trace()` is not yet wrapped around the live model call, so
+traces do not accumulate. Judge calibration against human labels has not been done.
 
 ## License
 

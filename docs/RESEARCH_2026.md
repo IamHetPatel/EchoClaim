@@ -30,15 +30,16 @@ exists precisely so this can change later without a rewrite — swapping to
 Qwen3-Embedding-0.6B is exactly the migration PR4 was meant to demonstrate.
 
 Worth knowing: **EmbeddingGemma-300M** would be the candidate if embedding latency ever
-became the constraint. It is not — recall is 456 ms and reranking is 28,000 ms.
+became the constraint. It is not — recall is ~16 ms warm and reranking is ~2,776 ms.
 
 ---
 
 ## Reranking — this is the one to act on
 
-We measured the cross-encoder at **98% of query latency** (28,270 ms of 28,726 ms, CPU,
-27 candidates). Current benchmarks put `bge-reranker-v2-m3` at ~1100 pairs/s, ~90 ms per
-100 pairs **on GPU** — so our number is the CPU penalty, not a flaw in the model.
+We measured the cross-encoder at **over 99% of query latency** (2,776 ms steady state
+against ~16 ms for recall, CPU, 27 candidates). Current benchmarks put
+`bge-reranker-v2-m3` at ~1100 pairs/s, ~90 ms per 100 pairs **on GPU** — so our number is
+the CPU penalty, not a flaw in the model.
 
 Three options, in order of how well they fit what already exists:
 
@@ -130,14 +131,15 @@ and should be stated as missing until it is done** — which is what
 
 ## Ranked next steps
 
-| # | Change | Effort | Why |
+| # | Change | Effort | Status |
 |---|---|---|---|
-| 1 | Judge from a different model family than the generator | Small | Fixes a documented bias in our own CI config |
-| 2 | Try `ms-marco-TinyBERT-L-2` as the live reranker | Small | May put reranking back in the call path; measurable immediately |
-| 3 | Implement PR4 (zero-downtime migration) | Medium | The build plan's centerpiece, still unbuilt |
-| 4 | Wire `trace()` into the live turn | Small | Without it the drift monitor never has data |
-| 5 | ColBERT multivectors as a second named vector | Medium | The architecturally right answer to §6.2 |
-| 6 | Human-calibrate the judge (kappa ≥ 0.7) | Large | Turns groundedness from a number into a measurement |
+| 1 | Judge from a different model family than the generator | Small | **Done.** `ANSWER_BACKEND` and `JUDGE_BACKEND` are separate; `family_conflict()` flags a collision and records it in provenance; CI generates with Gemini and judges with llama3.2. |
+| 2 | Try `ms-marco-TinyBERT-L-2` as the live reranker | Small | **Tried, rejected.** It halves MRR on German (0.30 vs 0.70 for no reranking). The constraint was language coverage, not model size. Measurement also showed lexical reranking scores *below* none, so `auto` is now a no-op reranker. |
+| 3 | Implement PR4 (zero-downtime migration) | Medium | **Done and rehearsed** against live Qdrant, including a blocked cutover and a rollback. |
+| 4 | Wire `trace()` into the live turn | Small | Open. Without it the drift monitor never has data. |
+| 5 | ColBERT multivectors as a second named vector | Medium | Open — and now the only promising route to reranking in the live path. |
+| 6 | Human-calibrate the judge (kappa ≥ 0.7) | Large | Open. Turns groundedness from a number into a measurement. |
+| 7 | Find a small *multilingual* reranker | Small | New, from #2's failure: the shape worth looking for. |
 
 ---
 
