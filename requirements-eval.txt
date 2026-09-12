@@ -1,0 +1,24 @@
+# Dependencies for the CI eval gate and the test suite.
+#
+# Deliberately narrower than requirements.txt: CI scores retrieval, groundedness and
+# extraction, so it needs the retrieval + judge stack but not the live telephony path
+# (LiveKit, Twilio, audio I/O). Keeping them apart is what lets the gate run in a few
+# minutes on a clean runner.
+
+# retrieval
+qdrant-client>=1.9
+sentence-transformers>=3.0      # BGE-M3 embedder + bge-reranker-v2-m3 cross-encoder
+numpy>=1.26
+PyYAML>=6.0
+
+# llmops
+google-genai>=1.0               # llmops.judge / llmops.groundedness (temperature 0)
+requests>=2.31                  # llmops.judge -> Ollama backend
+python-dotenv>=1.0
+
+# extraction (extraction_f1 metric)
+gliner>=0.2.13
+torch>=2.2
+
+# test runner
+pytest>=8.0
