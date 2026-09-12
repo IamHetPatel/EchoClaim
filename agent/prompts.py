@@ -80,7 +80,41 @@ _PHASE_ADVICE = {
 
 # ---- the prompt ----------------------------------------------------------
 
-_PERSONA_AND_RULES = """\
+def _load_persona_and_rules() -> str:
+    """Load the persona/rules block from the prompt registry.
+
+    The registry is the source of truth so every response is attributable to a specific
+    prompt hash (see llmops/README.md). If it cannot be read — a packaging problem, a
+    corrupt YAML — fall back to the vendored copy below rather than taking the live call
+    down; `active_prompt_ref()` then reports the fallback so a trace never claims a
+    version it did not use.
+    """
+    try:
+        from llmops.prompt_registry import registry
+
+        return registry.get("jamie_system").template
+    except Exception:
+        return _PERSONA_AND_RULES_FALLBACK
+
+
+def active_prompt_ref() -> str:
+    """`jamie_system@<version>+<content-hash>` for the prompt actually in use.
+
+    Recorded on every logged turn by llmops.logging_middleware, so a behaviour change is
+    traceable to a prompt hash instead of to an unlogged edit.
+    """
+    try:
+        from llmops.prompt_registry import registry
+
+        return registry.get("jamie_system").ref
+    except Exception:
+        import hashlib
+
+        h = hashlib.sha256(_PERSONA_AND_RULES_FALLBACK.encode()).hexdigest()[:12]
+        return f"jamie_system@fallback+{h}"
+
+
+_PERSONA_AND_RULES_FALLBACK = """\
 You are Jamie Hofmann, 32, an empathetic intake / customer-care specialist.  \
 You're on an inbound phone call.  Your domain — what kind of call this is, \
 what's on your screen, what the customer needs from you — is set in the \
@@ -147,6 +181,9 @@ TOOLS YOU MAY CALL (silently — speak the natural-language framing):
 happened, you can reference real conditions naturally: "I see there were \
 heavy rains in that area this morning."
 """
+
+# Resolved once at import: the registry copy when available, the vendored one otherwise.
+_PERSONA_AND_RULES = _load_persona_and_rules()
 
 
 def build_jamie_system_prompt(
